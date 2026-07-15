@@ -8,35 +8,26 @@ This is a methodology write-up, not a framework. Everything documented here runs
 
 One human owner sets objectives and holds the keys to anything involving money, customers, or production. Everything else — design, implementation, testing, review, deployment to the development environment — is delegated to an orchestrated set of AI agents running under Claude Code, with an independent second LLM vendor (OpenAI Codex) acting as the reviewer of record before any merge.
 
-```
-                         ┌─────────────────────────────┐
-                         │  Owner (human)              │
-                         │  objectives · money · risk  │
-                         └──────────────┬──────────────┘
-                                        │ objective
-                                        ▼
-     ┌──────────────────────────────────────────────────────────┐
-     │  Main session (Claude) — the orchestrator                │
-     │  gather context → act → verify → repeat                  │
-     └───┬───────────────┬───────────────┬──────────────────┬───┘
-         │ fan out       │               │                  │
-         ▼               ▼               ▼                  ▼
-   ┌──────────┐   ┌────────────┐  ┌────────────┐   ┌──────────────┐
-   │ Explore/ │   │ Planner    │  │ Executor   │   │ Guardian     │
-   │ research │   │ (Opus)     │  │ (Sonnet)   │   │ lint·types·  │
-   │ agents   │   │ designs    │  │ implements │   │ build·tests  │
-   └──────────┘   └────────────┘  └────────────┘   └──────────────┘
-                                        │
-                                        ▼
-                     ┌───────────────────────────────────┐
-                     │  Independent verification          │
-                     │  Codex (different vendor) reviews  │
-                     │  the exact PR diff → SHIP / BLOCK  │
-                     │  enforced by a per-commit-SHA hook │
-                     └───────────────┬───────────────────┘
-                                     │ SHIP
-                                     ▼
-                        merge to dev → CI deploys → verified green
+```mermaid
+flowchart TB
+    Owner["Owner (human)<br/>objectives · money · risk"]
+    Main["Main session (Claude) — the orchestrator<br/>gather context → act → verify → repeat"]
+    Explore["Explore / research agents<br/>parallel fan-out"]
+    Planner["Planner (Opus)<br/>designs the approach"]
+    Executor["Executor (Sonnet)<br/>implements mechanically"]
+    Guardian["Guardian<br/>lint · types · build · tests"]
+    Verify["Independent verification<br/>Codex (different vendor) reviews the exact PR diff<br/>SHIP / BLOCK — enforced by a per-commit-SHA hook"]
+    Merge["merge to dev → CI deploys → verified green"]
+
+    Owner -->|objective| Main
+    Main --> Explore
+    Main --> Planner
+    Planner --> Executor
+    Executor --> Guardian
+    Guardian --> Verify
+    Verify -->|SHIP| Merge
+    Verify -.->|BLOCK: fix and re-review| Executor
+    Merge -.->|"promotion toward production: human OK, every time"| Owner
 ```
 
 Three layers keep this safe:
@@ -71,6 +62,19 @@ Total human involvement: the objective at the start, the promotion decision at t
 | [06 — Memory](docs/06-memory.md) | Persistent per-project memory, the index/detail split, consolidation, incidents becoming rules |
 | [07 — Engineering loops](docs/07-engineering-loops.md) | discover→plan→execute→verify→iterate campaigns with measured baselines and an independent judge |
 | [08 — Lessons learned](docs/08-lessons-learned.md) | The failures that produced the rules — genericized war stories |
+| [09 — Adoption guide](docs/09-adoption-guide.md) | Adopt this in a week — a staged path where every stage is independently valuable |
+
+## Copy-pasteable examples
+
+The [`examples/`](examples/) directory contains genericized, directly usable versions of the real configuration:
+
+| Directory | Contents |
+|---|---|
+| [`examples/claude-md/`](examples/claude-md/) | A project-constitution template (`CLAUDE.md`) distilled from the production one |
+| [`examples/hooks/`](examples/hooks/) | The guardrail hooks: protected-branch pushes, destructive SQL, deploy bypasses, and the cross-vendor merge gate |
+| [`examples/agents/`](examples/agents/) | The five agent definitions: orchestrator, guardian, loop planner/executor/verifier |
+| [`examples/skills/`](examples/skills/) | A skill template plus two complete playbooks (safe migrations, webhook systems) |
+| [`examples/memory/`](examples/memory/) | The memory system: index template and one-fact-per-file memory examples |
 
 ## The principles in one paragraph
 
@@ -78,7 +82,7 @@ Give the AI a clear objective and full technical autonomy inside hard walls. Mak
 
 ## What this is not
 
-- Not a framework or library — there is nothing to install.
+- Not a framework or library — the only things to install are the sanitized configs in [`examples/`](examples/), and those are starting points, not dependencies.
 - Not a claim that this is the only way — it's the way that survived contact with a production financial system.
 - Not the full configuration of our platform — excerpts are sanitized and simplified; platform-identifying details are deliberately absent.
 

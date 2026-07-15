@@ -1,0 +1,51 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // empty'); echo \"$cmd\" | grep -qE 'git[[:space:]]+push([[:space:]]+[^[:space:]]+)*[[:space:]]+(main|prod)([[:space:]]|$)' || exit 0; if echo \"$cmd\" | grep -qE 'cd[[:space:]]' && ! echo \"$cmd\" | grep -qE 'my-app([/\"[:space:]]|$)'; then exit 0; fi; jq -n '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:\"Guardrail: pushing to main/prod of my-app is blocked. These are protected release branches and CI/CD deploys on push, so this command IS a deploy. Work on a feature branch and open a PR. If this push is genuinely intended, the human runs it manually.\"}}'; exit 0",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // empty'); if echo \"$cmd\" | grep -qE '(^|[^[:alnum:]_])(npm run deploy:(migrations|functions|prod)|supabase[[:space:]]+(db[[:space:]]+push|migration[[:space:]]+up))'; then jq -n '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:\"Guardrail: deploys go through CI/CD on git push to the target branch. Local deploy scripts are an emergency-only escape hatch and must be run manually by the human. Push the branch and let the pipeline deploy.\"}}'; else exit 0; fi",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // empty'); echo \"$cmd\" | grep -qE '(^|[^[:alnum:]_])psql([[:space:]]|$)' || exit 0; u=$(printf '%s' \"$cmd\" | tr 'a-z' 'A-Z'); deny(){ jq -n --arg r \"$1\" '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:$r}}'; exit 0; }; echo \"$u\" | grep -qE 'DROP[[:space:]]+(TABLE|COLUMN|SCHEMA|DATABASE|VIEW|MATERIALIZED[[:space:]]+VIEW|FUNCTION|POLICY|TYPE|INDEX|ROLE|OWNED)|(^|[^A-Z_])TRUNCATE([^A-Z_]|$)|DISABLE[[:space:]]+ROW[[:space:]]+LEVEL[[:space:]]+SECURITY' && deny 'Guardrail: destructive SQL via psql is blocked (DROP/TRUNCATE/DISABLE ROW LEVEL SECURITY). Schema and data changes belong in a reviewed migration deployed via CI, not an ad-hoc shell command.'; if echo \"$u\" | tr ';' '\\n' | grep -E '(^|[^A-Z_])(DELETE[[:space:]]+FROM|UPDATE[[:space:]])' | grep -qvE '(^|[^A-Z_])WHERE([^A-Z_]|$)'; then deny 'Guardrail: a DELETE/UPDATE without its own WHERE clause via psql is blocked - it could affect every row. Add a WHERE to each statement, or use a reviewed migration.'; fi; exit 0",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // empty'); echo \"$cmd\" | grep -qE '(^|[^[:alnum:]_])gh[[:space:]]+pr[[:space:]]+merge' || exit 0; pr=$(echo \"$cmd\" | grep -oE 'merge[[:space:]]+\"?#?[0-9]+' | grep -oE '[0-9]+' | head -1); sha=$(gh pr view $pr --json headRefOid --jq '.headRefOid' 2>/dev/null); if [ -n \"$sha\" ] && [ -f \"${CLAUDE_PROJECT_DIR:-.}/.claude/reviews/$sha\" ]; then exit 0; fi; jq -n --arg s \"${sha:-unresolved}\" '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:(\"Guardrail: merge gate. No independent-review approval on file for PR head SHA \" + $s + \" under .claude/reviews/. Have an independent reviewer (a different model/vendor than the author) review the exact PR diff; on a SHIP verdict record it with examples/hooks/record-approval.sh <pr-number>, then retry the merge. New commits change the head SHA and invalidate prior approvals. This gate fails closed when the SHA cannot be resolved.\")}}'; exit 0",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": ".*execute_sql",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sql=$(jq -r '.tool_input.query // .tool_input.sql // empty'); u=$(printf '%s' \"$sql\" | tr 'a-z' 'A-Z'); deny(){ jq -n --arg r \"$1\" '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:$r}}'; exit 0; }; echo \"$u\" | grep -qE 'DROP[[:space:]]+(TABLE|COLUMN|SCHEMA|DATABASE|VIEW|MATERIALIZED[[:space:]]+VIEW|FUNCTION|POLICY|TYPE|INDEX|ROLE|OWNED)' && deny 'Guardrail: destructive DDL (DROP ...) via a raw SQL tool is blocked. Put schema changes in a reviewed migration and deploy via CI.'; echo \"$u\" | grep -qE '(^|[^A-Z_])TRUNCATE([^A-Z_]|$)' && deny 'Guardrail: TRUNCATE via a raw SQL tool is blocked. Use a reviewed migration.'; echo \"$u\" | grep -qE 'DISABLE[[:space:]]+ROW[[:space:]]+LEVEL[[:space:]]+SECURITY' && deny 'Guardrail: disabling row level security via a raw SQL tool is blocked.'; if echo \"$u\" | tr ';' '\\n' | grep -E '(^|[^A-Z_])(DELETE[[:space:]]+FROM|UPDATE[[:space:]])' | grep -qvE '(^|[^A-Z_])WHERE([^A-Z_]|$)'; then deny 'Guardrail: a DELETE/UPDATE statement without its own WHERE clause via a raw SQL tool is blocked - it could affect every row. Add a WHERE to each statement, or use a reviewed migration.'; fi; exit 0",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "p=$(jq -r '.tool_input.file_path // empty'); if echo \"$p\" | grep -qE 'supabase/\\.temp(/|$)'; then jq -n '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:\"Guardrail: this directory holds local CLI state, is gitignored, and is managed by the tool itself. Never write here - edits get clobbered or, worse, committed by accident.\"}}'; else exit 0; fi",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

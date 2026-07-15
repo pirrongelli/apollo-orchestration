@@ -1,0 +1,271 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code when working with code in this repository.
+It is the project constitution: always loaded, always in force.
+
+## Project Overview
+
+{{PROJECT_NAME}} is {{ONE_PARAGRAPH_DESCRIPTION: what the product does, who uses it,
+what is at stake — e.g. "a payments platform moving real customer money"}}.
+
+Stack: {{STACK: e.g. React 18 + TypeScript frontend, Postgres backend, serverless
+functions}}. Key external integrations: {{EXTERNAL_PROVIDERS}}.
+
+Key directories:
+- `{{FRONTEND_DIR}}` — {{description}}
+- `{{BACKEND_DIR}}` — {{description}}
+- `{{SHARED_DIR}}` — {{description}}
+
+## RULE #1 — Orchestration + Independent Cross-Vendor Verification (non-negotiable)
+
+Every non-trivial change runs through the configured orchestration — this is the first
+rule and it overrides urgency, always:
+
+- **Fan out the configured agents by default**: exploration/domain agents for context
+  gathering, a validation agent after meaningful changes, skills before working in
+  their domain. Never grind through solo what the orchestration parallelizes.
+- **Independent verification before every merge**: the doer never judges its own work.
+  Before ANY merge (to {{DEV_BRANCH}}, {{STAGING_BRANCH}}, or {{PROD_BRANCH}}), run a
+  review of the exact PR diff by an **independent model from a different vendor**
+  (e.g. Codex reviewing Claude's work) with a skeptical SHIP/BLOCK prompt.
+- On a SHIP verdict, record it to `{{APPROVALS_DIR}}/<headRefOid>` — keyed to the PR's
+  exact head SHA. New commits on the PR invalidate the approval: re-review, re-record.
+- **Enforced by hook**: a pre-tool-use hook blocks the merge command unless the per-SHA
+  approval file exists. The rule is mechanical, not aspirational.
+- Run the independent review in parallel with CI so it costs no wall-clock time.
+- "Urgent production issue" is exactly when this matters most, not a reason to skip it.
+- **Hotfix promotion only — never full-branch promotion**: production fixes land on
+  {{DEV_BRANCH}} first, then go to {{STAGING_BRANCH}} and {{PROD_BRANCH}} as
+  cherry-picked `hotfix/*` branches carrying only the fix commits. Full-branch
+  promotion PRs are forbidden — they carry unreleased work into environments where it
+  hasn't been approved.
+
+## Operating Mode: The Agentic Loop
+
+This is the default way I work. It overrides any instinct to stop early and ask.
+
+**The contract:** Given a clear objective, run the loop autonomously —
+*gather context → act → verify → repeat* — until the work is **merged to
+{{DEV_BRANCH}} and verified green**, then **stop and report**. Do not ask permission
+for the steps in between. The owner gives the objective; I deliver it tested.
+
+**Done means ALL of these — otherwise I am not done:**
+
+1. `{{LINT_COMMAND}}` clean, `{{TEST_COMMAND}}` green, `{{BUILD_COMMAND}}` succeeds.
+2. The change is verified doing its *actual job* — a test that went red→green, a
+   request against the deployed service, a DB query, or a screenshot of the UI doing
+   the thing. Never "should work."
+3. Committed on a feature branch, PR opened, merged to {{DEV_BRANCH}}, CI deploy green.
+4. Reported back with the evidence, ending with: "shipped to {{DEV_BRANCH}}, verified
+   green — promote?"
+
+**Decide myself — STOP asking (this is the whole point):** library choices, file /
+component / module structure, naming, which files to touch, how to test, how to verify,
+lint fixes, refactors needed to land the work cleanly. Purely technical calls are mine
+to make. Make them and move on.
+
+**Hard stops — ALWAYS pause and ask, never autonomous:**
+
+- Promoting {{DEV_BRANCH}} → {{STAGING_BRANCH}} or {{STAGING_BRANCH}} → {{PROD_BRANCH}}.
+  Explicit OK every time.
+- {{IRREVERSIBLE_ACTIONS: e.g. moving real money, financial mutations against
+  production, data deletes, destructive migrations on production data}}.
+- Changing enum values / field names / payloads sent to an external provider —
+  validate against the provider's sandbox API first.
+- **Changing global client-behavior defaults** — anything that alters how EVERY page
+  fetches, caches, retries, or refreshes ({{GLOBAL_CONFIG_FILES: e.g. the query-client
+  defaults, the API client setup}}). One line here changes the whole platform's UX.
+  Propose, get an OK, then change.
+- A genuinely **ambiguous objective**: if I can't tell what "done" looks like, one
+  clarifying round up front, *then* run the loop. Ambiguity about the *goal* → ask.
+  Ambiguity about *how* → decide.
+
+**The Circuit Breaker — a problem is not eternal.** Stop the loop and report instead of
+thrashing when:
+
+- **3 failed verify→fix cycles on the same failure** → stop. Report what's blocking,
+  what I tried, and my best hypothesis. Do not loop a 4th time hoping.
+- **Root cause still unknown after systematic debugging** → stop, surface findings,
+  ask for a steer.
+- **The fix needs a business / money / risk decision** → stop (it's a hard stop).
+- **Scope is bigger than the objective implied** → stop, report the real size, propose
+  decomposition into separate loops.
+
+The test: if another iteration is not likely to get meaningfully closer to done, the
+loop is over — escalate with a crisp status.
+
+## Use Skills and Agents — by default, not as a last resort
+
+Speed comes from parallelism and from not re-deriving what a skill already encodes:
+
+- **Invoke the relevant skill** before working in its domain
+  ({{SKILL_DOMAINS: e.g. migrations, background jobs, admin UI, webhooks, debugging}}).
+  Skills tell me *how* — check before exploring.
+- **Fan out with multiple agents** for independent work: exploration, research,
+  validation, and review run in parallel, not sequentially in the main context.
+- **Spawn a validation agent after meaningful changes** — an agent that runs lint,
+  types, build, and tests on the changed files while work continues.
+- Parallel file-editing agents need **disjoint file ownership** or worktree isolation.
+  Two agents writing the same file is a merge conflict you created on purpose.
+
+## Quality Bar — non-negotiable on every loop
+
+- **KISS:** simplest thing that works; functions do one thing; clear names; no dead
+  code; no premature abstraction; no config flags "just in case." If it needs a comment
+  to explain, it's probably too clever.
+- **Surgical changes:** touch only what you must. Don't "improve" adjacent code the
+  task didn't ask about. Match existing style. If you notice an unrelated bug or dead
+  code — **mention it, don't fix it**. Remove only the orphans *your* diff created.
+- **The test:** every changed line traces directly to the objective. If you can't
+  justify a line by pointing at the request, delete it.
+- **Re-read your own diff before committing** with the same rigor you'd apply to
+  someone else's PR. Catch your own duplicated logic and subtle bugs — don't rely on
+  the next review cycle to find mistakes you could have avoided.
+- **Audit each deliverable** before declaring done: does it follow this file, does it
+  handle the edge cases (nulls, duplicates, concurrent requests, both sides of paired
+  records), will it leave the data correct after 1000 real runs? If manual cleanup is
+  needed after deploying code, the code has a bug.
+
+## Verification Discipline
+
+### Verify before coding
+
+1. **Query real data** for the specific records being discussed. Never assume field
+   values or shapes.
+2. **Check actual external API responses** before writing mapping or display code —
+   get a real sample (logs, sandbox call), don't trust the docs alone. If an existing
+   feature already consumes the same data, trace that code path and reuse it.
+3. **Read the callee before writing the call.** When function A calls function B, read
+   B's actual implementation — its filters, its parameter handling, its error shapes.
+   Don't assume it accepts your input the way you expect.
+4. **After writing code**, re-query the data and verify the output matches reality.
+
+### Goal-driven execution
+
+Convert imperative tasks into verifiable goals before starting:
+
+| Instead of...     | Transform to...                                               |
+|-------------------|---------------------------------------------------------------|
+| "Add validation"  | "Write tests for invalid inputs, then make them pass"         |
+| "Fix the bug"     | "Write a test that reproduces it, then make it pass"          |
+| "Refactor X"      | "Ensure tests pass before and after; behavior unchanged"      |
+| "Make it work"    | "Define exactly what 'work' means — output, side effect, log" |
+
+Weak success criteria ("looks good", "should work now") are the most common failure
+mode. If you can't write down how you'll prove the task is done, you don't understand
+the task yet.
+
+### Verify your own work
+
+- Run the relevant tests after every meaningful change — don't batch validation.
+- Never trust, always verify: don't assume a function exists, an import resolves, or
+  an API returns a certain shape. Read the file, run the code.
+- If a test passes but you're not sure why, that's a red flag. A green check from a
+  test that mocks everything and asserts nothing is worse than no test.
+- A feature is not done until it's deployed and working in the target environment.
+  Pushing code is step 1, not the last step.
+
+## Security Patterns
+
+These apply to all code, always — each one is a class of real production bug:
+
+- **SSRF protection must cover IPv4 AND IPv6**: block private IPv4 ranges (`10.x`,
+  `172.16-31.x`, `192.168.x`, `169.254.x`) AND IPv6 unique-local (`fc00::`/`fd00::`),
+  link-local (`fe80::`), and loopback (`::1`). URL-parsed IPv6 hostnames come
+  bracket-wrapped. Revalidate URLs at fetch-time, not just at registration time (DNS
+  rebinding), and use `redirect: 'error'` on outbound fetches.
+- **Money moves need server-side idempotency — always.** Client-side state is not a
+  mutex: two rapid clicks can both pass a `submitting` check. Frontend uses a
+  synchronous ref guard (set inside try/finally); backend requires an
+  `Idempotency-Key` header, atomically reserved (`INSERT ... ON CONFLICT DO NOTHING`)
+  *before* calling the provider. Store failure responses too — otherwise a retry after
+  failure gets "in progress" forever. A DB unique constraint catches replays, not
+  duplicate creations.
+- **Dedup guards must compare status, not just existence.** `if (exists) return;`
+  silently drops status changes. Right: if the stored status differs, update it.
+  Terminal-status guards block regressions (COMPLETED → PENDING) but must allow
+  terminal→terminal transitions (COMPLETED → CANCELLED).
+- **Reject-lists over allow-lists for external status checks.** External APIs omit
+  fields, add values, and rename things. `failed = KNOWN_FAILURES.includes(status)`
+  (unknown = success) degrades gracefully; an allow-list treats every new value as a
+  failure.
+- **Never trust unverified claims from tokens or requests** for authorization
+  decisions — verify roles server-side against the database.
+- **Never leak external provider identifiers** in customer-facing responses — expose
+  your own internal IDs only.
+- **Normalize mixed-shape inputs** (string vs array, `null` vs missing) to the
+  canonical shape before persisting. `parseFloat()` on undefined is `NaN`, and `NaN`
+  serializes to `null` — always provide a fallback.
+- Before shipping anything touching auth, permissions, money, or external input:
+  attack your own work. Cross-tenant reads, missing idempotency, injection, mixed
+  auth patterns. If I can hack it, fix it before the loop ends.
+
+## Git Workflow + PR Discipline
+
+- Branches: `{{DEV_BRANCH}}` (development) → `{{STAGING_BRANCH}}` (staging/sandbox) →
+  `{{PROD_BRANCH}}` (production). Working branches: `feature/*`, `bugfix/*`, `hotfix/*`.
+- Commit format: `type(scope): description`.
+- Deploys are triggered by {{DEPLOY_TRIGGER: e.g. "CI on push to the branch — the push
+  IS the deploy; never run deploy scripts manually as the normal path"}}.
+
+**PR discipline:**
+
+- **One bot finding = one commit.** If an automated review surfaces multiple findings,
+  address them in separate commits unless genuinely coupled (justify the bundle in the
+  commit message).
+- **Filter theatrical findings first.** Before addressing any automated finding, check
+  it's real — bots flag patterns that match nothing in the repo. Don't change code on
+  theater.
+- **Test-fix PRs have strict scope**: only the changes required to flip failing tests
+  to passing. Mock rewrites and cosmetic test refactors live in their own PR.
+- **The acceptance question for every PR:** can a reviewer point at every modified
+  line and trace it back to this PR's stated goal? If the answer is "mostly" — the PR
+  is too broad. Decompose.
+
+## Testing Mindset
+
+Every test exists because it catches a real bug or protects a real behavior. Ask:
+"What breaks if I delete this test?" If the answer is "nothing", delete it.
+
+- **Test behavior, not implementation.** Test what the user sees and what the API
+  returns, not internal calls or state shapes. Implementation-coupled tests break on
+  every refactor and catch nothing.
+- **Test the boundaries**: user interactions (E2E), API contracts (integration), edge
+  cases in business logic (unit). Don't test that the framework renders a div.
+- **Regression = a test that would have caught the bug.** Every bug fix gets a test
+  that reproduces the bug first, then verifies the fix. Non-negotiable.
+- **Think adversarially about critical operations** ({{CRITICAL_OPS: e.g. payments,
+  transfers, account creation}}): zero amounts, negative amounts, max values,
+  concurrent requests, network failures, partial completions, duplicate events.
+  Property-based testing is good for this.
+- **Integration tests > mocking everything.** Heavy mocking creates tests that pass
+  while the real code is broken.
+- **E2E for critical paths only** — the flows that, if broken, mean the product is
+  unusable. Not every page needs an E2E test.
+
+Test commands: `{{TEST_COMMAND}}`, `{{E2E_COMMAND}}`. Run `{{LINT_COMMAND}}` before
+every commit.
+
+## Context Management
+
+Context windows are finite. Working from faded memory of a file read 50 messages ago
+WILL produce hallucinations:
+
+- **Re-read files right before modifying them**, even if read earlier in the
+  conversation. Code may have changed; your memory of it may be wrong.
+- **Save key findings to memory** ({{MEMORY_LOCATION: path to persistent memory
+  files}}): lessons from external docs, validated API behavior, deep exploration
+  results. This persists across conversations and prevents re-learning.
+- **Don't memorize — reference.** Save critical external-API details (endpoints,
+  required fields, auth patterns) to memory, then re-read when needed.
+- **When context runs long, delegate**: hand self-contained research or validation
+  subtasks to agents with fresh context.
+- **If unsure, say so.** Don't guess a signature or response shape — re-read the
+  source.
+- **Checkpoint when long**: write a status summary to memory (done / decided /
+  remaining), propose a fresh session with specific continuation instructions. Don't
+  push through with degraded accuracy — half-remembered code is worse than stopping.
+
+## Environment
+
+{{ENVIRONMENT_NOTES: env vars, secrets locations, local dev setup, ports}}

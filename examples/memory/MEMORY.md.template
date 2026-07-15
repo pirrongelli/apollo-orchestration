@@ -1,0 +1,27 @@
+# <Project Name> — Memory Index
+
+<!--
+This file is loaded into EVERY session. Keep it small.
+Format: one line per memory — [Title](filename.md) — hook.
+The hook is the shortest string that tells a session when to open the file.
+Group into sections; put must-read rules first.
+Update a line in the same session its memory changes. Delete lines whose
+memories are resolved and compressed away.
+-->
+
+## Read first (rules)
+- [Small PRs, one concern each](feedback_small_prs.md) — owner rejects multi-concern PRs; split before opening, never bundle "while I was here" fixes.
+- [Client-side state is not a concurrency guard](feedback_example.md) — double-submit created a duplicate payment; synchronous ref + server-side idempotency key on every money move.
+- [Absolute dates in all notes and memories](feedback_absolute_dates.md) — "last Tuesday" is meaningless in three months.
+
+## External API pitfalls
+- [PayVendor wraps everything in a double data envelope](reference_example.md) — actual payload at `response.data.data`; statuses UPPERCASE, lowercase before DB insert.
+- [PayVendor sandbox rejects enum values its docs list](reference_payvendor_enum_validation.md) — validate against the live sandbox before changing wire data.
+
+## Active work
+- [Saved views for the operations dashboard](project_example.md) — shipped to dev 2026-03-02, promoted to staging 2026-03-05; NOT production. Open: empty-state UI, index migration.
+- [Webhook retry backoff rework](project_webhook_retry_backoff.md) — design agreed 2026-03-01, implementation not started.
+
+## User preferences
+- [Owner is a business owner, not an engineer](user_owner_role.md) — make technical calls autonomously; escalate only money, risk, and irreversible decisions.
+- [Report with evidence, end with a promote question](user_reporting_style.md) — "shipped to dev, verified green — promote to staging?"
