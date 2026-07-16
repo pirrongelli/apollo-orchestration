@@ -1,5 +1,11 @@
 # Apollo Orchestration
 
+![In Honor and Memory of Apollo](assets/apollo.png)
+
+> Named for **Apollo** — the dog who kept me company through countless 3am
+> sessions and long nights of work. He was there for all of it, curled up
+> nearby while this took shape. This repository carries his name in his memory.
+
 How we build and operate a regulated Banking-as-a-Service platform with a team of one human and many AI agents — the orchestration model, the guardrails, and the lessons that shaped them.
 
 This is a methodology write-up, not a framework. Everything documented here runs in production today: the platform moves real money, so every pattern below exists because something cheaper failed first. The excerpts are real configuration, sanitized.
