@@ -63,6 +63,7 @@ Total human involvement: the objective at the start, the promotion decision at t
 | [07 — Engineering loops](docs/07-engineering-loops.md) | discover→plan→execute→verify→iterate campaigns with measured baselines and an independent judge |
 | [08 — Lessons learned](docs/08-lessons-learned.md) | The failures that produced the rules — genericized war stories |
 | [09 — Adoption guide](docs/09-adoption-guide.md) | Adopt this in a week — a staged path where every stage is independently valuable |
+| [10 — State of the art (mid-2026)](docs/10-state-of-the-art-2026.md) | What a deep-research sweep validated, what we changed in response, and what we chose not to adopt |
 
 ## Copy-pasteable examples
 
@@ -70,10 +71,13 @@ The [`examples/`](examples/) directory contains genericized, directly usable ver
 
 | Directory | Contents |
 |---|---|
-| [`examples/claude-md/`](examples/claude-md/) | A project-constitution template (`CLAUDE.md`) distilled from the production one |
+| [`examples/claude-md/`](examples/claude-md/) | A project-constitution template (`CLAUDE.md`) distilled from the production one — kept small (~200 lines) on purpose |
+| [`examples/rules/`](examples/rules/) | Path-scoped rules that auto-load only when a matching file is read — how the constitution stays small |
 | [`examples/hooks/`](examples/hooks/) | The guardrail hooks: protected-branch pushes, destructive SQL, deploy bypasses, and the cross-vendor merge gate |
 | [`examples/agents/`](examples/agents/) | The five agent definitions: orchestrator, guardian, loop planner/executor/verifier |
 | [`examples/skills/`](examples/skills/) | A skill template plus two complete playbooks (safe migrations, webhook systems) |
+| [`examples/codex-review-rubric.md`](examples/codex-review-rubric.md) | The rules-based rubric that hardens the cross-vendor SHIP/BLOCK review |
+| [`examples/loops/`](examples/loops/) | Immutable feature lists + a fail-closed checker for long-horizon, multi-session work |
 | [`examples/memory/`](examples/memory/) | The memory system: index template and one-fact-per-file memory examples |
 
 ## The principles in one paragraph

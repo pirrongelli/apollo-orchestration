@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "description", "verify", "status"],
+    "additionalProperties": false,
+    "properties": {
+      "id": { "type": "string", "pattern": "^F[0-9]+$" },
+      "description": { "type": "string", "minLength": 10 },
+      "verify": { "type": "string", "minLength": 5,
+        "description": "Command or concrete browser/manual check that proves the feature works end-to-end" },
+      "status": { "enum": ["pass", "fail"] }
+    }
+  }
+}

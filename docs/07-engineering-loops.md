@@ -144,6 +144,46 @@ Loops can also end by **veto**. Adversarial audit sits above the loop: it can ki
 
 That's the pattern worth generalizing: the plan asked "can we build this?"; the audit asked "what happens when the external system disagrees with our assumption?" Loops need both questions, answered by different minds.
 
+## Long-horizon loops: immutable feature lists + browser E2E
+
+The anatomy above assumes a bounded campaign — a coverage push, a migration
+sweep — that closes in a handful of iterations. Loops that instead run for
+many sessions against a long feature backlog exposed two failure modes the
+base pattern didn't cover: the agent starts declaring features "done" by
+feel once the session count climbs, and the feature spec itself quietly
+drifts — a clause reworded or dropped between session one and session five,
+because nothing prevented the agent being graded against a spec from also
+editing that spec.
+
+The fix is the same principle the rest of the loop system already leans
+on — mechanical gates over honor-system compliance, applied to the spec
+itself:
+
+- **An immutable feature list is the ground truth.** The initializer creates
+  it up front — one entry per feature, each with an id, a description, a
+  concrete `verify` step, and a `status` starting at `fail`. Existing entries
+  are append-only: an iteration may flip `status` to `pass`, but the
+  `description` and `verify` it was scoped against are frozen. New entries
+  may still be appended as scope is discovered.
+- **One feature per iteration**, proven via its `verify` step before the
+  status flips — never a batch of features waved through together.
+- **A checker enforces the freeze as a gate**, diffing the working feature
+  list against the version committed at git `HEAD` and failing the run on
+  any removed entry or edited `description`/`verify`. It is deliberately
+  fail-closed: an unreachable git `HEAD`, or a committed baseline that's
+  corrupt or unreadable, is a hard error — never silently treated as "no
+  baseline yet."
+- **UI features require browser-level E2E**, not unit or component tests, as
+  their `verify` step — agents reliably miss end-to-end breakage (an
+  unreachable route, a form that submits but never re-renders) that
+  mocked-network tests can't see. Backend features get the equivalent
+  standard: a real call against a deployed environment, not a mock.
+
+A worked, tested implementation of the schema and checker lives in
+[`examples/loops/`](../examples/loops/) — see that directory's README for
+the full rationale and the test suite covering every allowed and disallowed
+edit.
+
 ## Why loops beat ad-hoc sessions
 
 For small work, a loop is overhead — just fix the bug. For campaigns, four structural properties compound:

@@ -30,8 +30,11 @@ rule and it overrides urgency, always:
   (e.g. Codex reviewing Claude's work) with a skeptical SHIP/BLOCK prompt.
 - On a SHIP verdict, record it to `{{APPROVALS_DIR}}/<headRefOid>` — keyed to the PR's
   exact head SHA. New commits on the PR invalidate the approval: re-review, re-record.
-- **Enforced by hook**: a pre-tool-use hook blocks the merge command unless the per-SHA
-  approval file exists. The rule is mechanical, not aspirational.
+- **Enforcement — confirm before you claim it**: if a pre-tool-use hook actually blocks
+  the merge command without the per-SHA approval file, say "enforced by hook" — it's
+  mechanical, not aspirational. If no such hook exists in this repo yet, don't write
+  that. Say **"convention-only — no automated gate yet"** instead. A false enforcement
+  claim trains the agent to trust a safety net that isn't there.
 - Run the independent review in parallel with CI so it costs no wall-clock time.
 - "Urgent production issue" is exactly when this matters most, not a reason to skip it.
 - **Hotfix promotion only — never full-branch promotion**: production fixes land on
@@ -93,6 +96,25 @@ thrashing when:
 
 The test: if another iteration is not likely to get meaningfully closer to done, the
 loop is over — escalate with a crisp status.
+
+## Where Knowledge Lives
+
+This file is the always-loaded constitution — keep it near **~200 lines**. Every line
+here is re-read on every turn of every session, so only rules that must constrain the
+agent *regardless of what it's doing* belong here. Everything else lives on-demand:
+
+- **Skills** (`{{SKILLS_DIR}}`) — step-by-step procedures for one domain (migrations,
+  background jobs, webhooks, deploys). Invoke the relevant skill before working in its
+  domain instead of inlining the procedure here.
+- **Path-scoped rules** (`.claude/rules/*.md`) — constraints that only matter for
+  specific files or directories (e.g. a security rule scoped to the payments path).
+  These auto-load when the agent reads a matching file, so they don't tax sessions that
+  never touch that code. If a rule keeps getting duplicated across skills or keeps
+  growing this file, check whether it's really path-scoped and belongs there instead.
+
+If you're about to add a paragraph here, ask first: does this need to constrain every
+session, or only sessions touching one domain / one path? If the latter, it's a skill
+or a rule, not a constitution entry.
 
 ## Use Skills and Agents — by default, not as a last resort
 

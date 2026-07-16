@@ -133,6 +133,51 @@ The most dangerous moment for any control is the production incident. Everything
 
 Because the review runs in parallel with CI, honoring the gate during an incident costs approximately nothing: the hotfix PR's CI has to run anyway, and the verdict lands first. And because enforcement is a hook, the agent could not skip it even if it rationalized that it should. The founder can override — invoking a command manually, outside the agent's toolchain, is always available to the human — but the *AI team* has no urgency escape hatch. That asymmetry is deliberate: humans get judgment, agents get gates.
 
+## Hardening the gate: rules over vibes
+
+A skeptical SHIP/BLOCK prompt is a big improvement over "any thoughts?" — but
+it is still, underneath, open-ended LLM-as-judge: one model forming a holistic
+opinion about another model's diff. Anthropic's own guidance on evaluating
+model outputs rates bare LLM-as-judge as generally not a very robust method on
+its own — it drifts, it is inconsistent across runs, and a BLOCK verdict comes
+with no way to tell *why* short of re-reading the whole diff yourself.
+
+We hardened ours by replacing the open-ended prompt with a fixed, numbered
+rubric: a short list of concrete rules the diff must satisfy, plus a mandatory
+verdict grammar. The reviewer no longer forms a free-floating opinion — it
+checks the diff against R1, R2, R3, … and reports which ones failed:
+
+```
+VERDICT: BLOCK
+RULES FAILED:
+- R2: withdrawal handler has no idempotency guard; duplicate POST double-debits — payments.ts:114
+- R9: new `queue_jobs` table is written by a cron worker but never added to the realtime publication — 20260714_add_queue_jobs.sql
+```
+
+The genericized rubric lives in
+[`examples/codex-review-rubric.md`](../examples/codex-review-rubric.md). Ten
+rules, each aimed at a failure class we have actually hit in production: scope
+creep, money-move idempotency, multi-tenant data leaks, auth-pattern mixing,
+dedup guards that drop status changes, leaked external IDs, coverage-theater
+tests, swallowed errors, tables that go stale without a live-update path, and
+non-idempotent migrations.
+
+Two things this buys over the open-ended prompt:
+
+- **Auditable verdicts.** Every BLOCK cites a rule number, a one-line reason,
+  and a `file:line`. You can grep past reviews for which rule fires most often
+  — that is a map of where your own agent's blind spots actually are, not a
+  guess.
+- **Consistency across runs.** A rules-based check is far more reproducible
+  than "does this diff look okay to you." The same diff against the same
+  rubric should not flip between SHIP and BLOCK depending on model mood.
+
+This does not replace judgment entirely — R1 ("does every line trace to the
+goal") and R7 ("is this test real or theater") still require the reviewer to
+reason about intent, not just pattern-match. The rubric narrows *what* it must
+reason about, which is where explicit rules with failure explanations earn
+their keep over a bare verdict.
+
 ## Adopting this pattern
 
 A minimal version, in an afternoon:
