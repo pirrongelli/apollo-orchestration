@@ -70,6 +70,7 @@ Total human involvement: the objective at the start, the promotion decision at t
 | [08 — Lessons learned](docs/08-lessons-learned.md) | The failures that produced the rules — genericized war stories |
 | [09 — Adoption guide](docs/09-adoption-guide.md) | Adopt this in a week — a staged path where every stage is independently valuable |
 | [10 — State of the art (mid-2026)](docs/10-state-of-the-art-2026.md) | What a deep-research sweep validated, what we changed in response, and what we chose not to adopt |
+| [11 — Testing and code health](docs/11-testing-and-code-health.md) | Why coverage alone is a bad risk signal, the CRAP metric, the ratchet rules that keep a quality gate alive, the test pyramid as a decision rule, TDD as the default |
 
 ## Copy-pasteable examples
 
@@ -85,6 +86,7 @@ The [`examples/`](examples/) directory contains genericized, directly usable ver
 | [`examples/codex-review-rubric.md`](examples/codex-review-rubric.md) | The rules-based rubric that hardens the cross-vendor SHIP/BLOCK review |
 | [`examples/loops/`](examples/loops/) | Immutable feature lists + a fail-closed checker for long-horizon, multi-session work |
 | [`examples/memory/`](examples/memory/) | The memory system: index template and one-fact-per-file memory examples |
+| [`examples/quality/`](examples/quality/) | The CRAP (Change Risk Anti-Patterns) risk metric: library, CLI report, spec, and the ratchet rules that keep the gate from being switched off |
 
 ## The principles in one paragraph
 
