@@ -173,7 +173,8 @@ Speed comes from parallelism and from not re-deriving what a skill already encod
    `reviews/<feature>-round-N-product.md` — with a verdict of `PASS` or
    `CHANGES_REQUIRED` and a numbered list of blocking issues. Never a shared path:
    the reviewers run in parallel and would overwrite each other's verdict.
-3. Any `CHANGES_REQUIRED` means fix the blocking issues and start the next round.
+3. Any `CHANGES_REQUIRED` in round 1 or 2 means fix the blocking issues and start the
+   next round. In round 3 there is no next round — it escalates, per step 4.
 4. The loop exits on `PASS` from both, or after round 3. If round 3 still fails, stop
    and escalate to the owner with the open issues listed.
 
