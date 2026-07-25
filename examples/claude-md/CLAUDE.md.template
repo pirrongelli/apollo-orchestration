@@ -181,7 +181,9 @@ Speed comes from parallelism and from not re-deriving what a skill already encod
 
 - At the start of any task, write the goal and its acceptance criteria to
   `reviews/<feature>-goal.md` as a checklist.
-- The loop above terminates only when every checklist item is checked.
+- The loop above completes successfully only when both reviewers return `PASS`
+  **and** every checklist item is checked. The round-3 escalation is a failure
+  exit, not completion — the unchecked items are what gets escalated.
 
 ## Verification Discipline
 

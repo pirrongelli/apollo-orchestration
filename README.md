@@ -53,7 +53,7 @@ Three layers keep this safe:
 A typical non-trivial change flows like this:
 
 1. The owner states an objective ("customers need X"). Ambiguity about the *goal* triggers one clarifying round; ambiguity about the *how* does not — technical calls belong to the AI.
-2. The session writes the goal and its **acceptance criteria as a checklist** to `reviews/<feature>-goal.md` before touching code. Nothing downstream can declare done while a box is unchecked — this is the loop's termination condition, not a formality.
+2. The session writes the goal and its **acceptance criteria as a checklist** to `reviews/<feature>-goal.md` before touching code. Nothing downstream can declare done while a box is unchecked — this is the loop's success condition, not a formality. The loop can still *end* with boxes unchecked, but only by escalating to the owner, which is a failure exit rather than completion.
 3. The main session checks whether a **skill** covers the domain (migrations, webhooks, provider features…) and loads it before touching code, then fans out **explore agents** to map the relevant code in parallel. Domain gates apply here: UI work loads the design and component-library skills and builds on existing primitives rather than hand-rolling; service, schema, and API work loads the backend and architecture skills and records the architecture decision in a **short ADR before implementation**.
 4. A **planner agent** on the strongest model designs the approach; **executor agents** on a cheaper model implement it, in parallel where file ownership is disjoint.
 5. A **guardian agent** validates lint, types, build, and tests after every meaningful batch of edits.
