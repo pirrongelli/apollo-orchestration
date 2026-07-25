@@ -165,7 +165,9 @@ Speed comes from parallelism and from not re-deriving what a skill already encod
 
 ### Review loop (mandatory, max 3 rounds)
 
-1. Each round spawns two reviewers in parallel:
+1. Each round spawns two reviewers in parallel. If the review expertise lives in
+   *skills* rather than dedicated agent types, name the skills each agent loads —
+   an agent type that doesn't exist can't be spawned:
    - **QA reviewer** — correctness, edge cases, error states, accessibility.
    - **Product reviewer** — does this meet the acceptance criteria, and is the flow
      usable.
