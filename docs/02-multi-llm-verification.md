@@ -178,6 +178,140 @@ reason about intent, not just pattern-match. The rubric narrows *what* it must
 reason about, which is where explicit rules with failure explanations earn
 their keep over a bare verdict.
 
+## A rule that claims enforcement it doesn't have is worse than an admitted convention
+
+For a stretch of this project's life, the merge gate was exactly the JSON
+one-liner described above — real, but the *only* thing standing between an
+agent and an unreviewed merge. Our own project instructions (the CLAUDE.md
+equivalent) stated the rule as: "the enforcing `gh pr merge` hook is planned
+but not yet installed — never merge without confirming the approval by hand."
+That is an honest sentence. A later draft, written under the pressure of "we
+already do this," tightened it to "enforced by a hook." Independent review
+read both versions back to back and asked the only question that matters:
+does the hook actually exist? It did not, yet.
+
+That is a worse failure than having no rule at all. A documented convention
+("no hook yet, verify manually") keeps everyone honest about what protects
+the merge button. A false enforcement claim removes the incentive to verify
+manually *and* provides no machinery to replace it — the exact conditions
+under which an accidental unreviewed merge slips through. We corrected the
+documentation back to the honest claim first, and only then built
+`merge-gate.sh` to make the stronger claim true. Order matters: never let a
+"the tooling handles this" sentence outlive the tooling.
+
+The general rule for adopting any of this: grep your own project
+instructions for "enforced by," "blocked by," "gated by," and similar
+enforcement language, and for each hit, go find the artifact that does the
+enforcing. If you can't point to it, the sentence is a promise, not a
+control — fix the sentence before you trust it.
+
+## The gate itself
+
+Once the hook exists, what does it actually check? Two things, checked in
+this order:
+
+1. **Full-branch promotion is refused before the approval is even
+   consulted.** If the PR's base is a customer-facing or production branch
+   and its head is `dev`/`main`/`prod` directly (not a `hotfix/*` branch),
+   the merge is denied regardless of any recorded approval. Production
+   fixes travel as small, cherry-picked hotfix branches — never as a
+   full-branch fast-forward — so this check has to fire first; an approval
+   for a hotfix diff must never be read as license for an unrelated
+   full-branch merge.
+2. **The merge is denied unless an approval file exists for the PR's EXACT
+   head SHA.** Not the PR number, not the branch name — the immutable
+   commit hash GitHub calls `headRefOid`. This is the single detail that
+   makes the gate self-maintaining: push one more commit and the head SHA
+   changes, so the old approval file no longer matches anything. There is no
+   separate "has this PR changed since it was reviewed" check to forget to
+   run — staleness detection falls out of the file-naming scheme for free.
+
+Both checks fail closed: an unresolvable PR, a head value that isn't a full
+hex SHA, or a missing approval file all deny the merge. The hook has no
+"allow if unsure" branch anywhere.
+
+## Inspecting a shell command is adversarial by nature
+
+The interesting engineering problem here isn't the two rules above — it's
+that the hook has to recognize "this Bash command is a `gh pr merge`" from
+plain text, and plain text is trivially disguisable. Four rounds of
+independent review of the hook's own source, not the code it was gating,
+turned up **eight distinct bypasses** of earlier versions: a quoted binary
+(`"gh" pr merge`), a command substitution (`$(command -v gh) pr merge`),
+cross-repo and cross-environment selectors (`--repo`, `--hostname`,
+`GH_HOST=...`), chaining and piping past a decoy command, URL and branch
+selectors that point at a different target than the one reviewed, intra-word
+quoting (`g''h`, `g"h"`, `g\h` — all of which the shell itself rejoins into
+`gh` before executing), ANSI-C quoting (`g$'h'`), and multiline smuggling —
+one line presents an approved-looking merge, the next line, unseen by a
+single-line-oriented check, merges an entirely different PR.
+
+Each fix in isolation looks like "add one more case to the regex." Taken
+together they say the opposite: **enumerating spellings loses.** There is no
+finite list of ways to write a shell command that a regex can exhaustively
+cover, because the shell's own quoting and substitution rules give an
+adversarial (or just creative) caller infinite rewrites of the same
+semantic command. Chasing bypasses one at a time is a treadmill.
+
+The posture that actually holds up is structural, not enumerative:
+
+- **Normalise aggressively before pattern-matching**, using more than one
+  normalisation (character-class stripping, punctuation removal) so that
+  tricks defeating one still get caught by the other.
+- **Require a canonical form to pass**, not merely the absence of a known-bad
+  pattern. Broad detection finds candidates; the canonical-form check is
+  what actually gates them. Anything that isn't exactly `gh pr merge
+  [<number>] [--flags]`, on its own line, with no substitution and no
+  cross-repo selector, is refused.
+- **Refuse, don't attempt to parse, anything unparseable.** A command the
+  gate cannot confidently classify is denied, on the same logic as the
+  fail-closed checks above.
+- **Accept the one documented false positive as the safe direction.** An
+  inert string that merely *mentions* `gh pr merge` — `echo "gh pr merge
+  1"`, a comment, a log line — also gets denied. That costs a human a moment
+  of "why did this get blocked"; the alternative costs an unreviewed merge.
+  Pick the trade whose failure mode is cheap.
+
+## State the threat model, and name the unevadable version
+
+None of the hardening above changes what kind of control this is, and
+pretending otherwise would be its own false-enforcement claim. A
+client-side `PreToolUse` hook stops an **accidental** omission — the agent
+forgetting the review step, under time pressure or a long context window.
+It does not stop a **determined adversary** who is willing to hand-craft
+shell syntax specifically to defeat it. Some forms of obfuscation need
+actual shell evaluation to resolve (`g${x}h` with `x` set elsewhere in the
+environment) and cannot be determined by inspecting the command string at
+all, full stop — no amount of regex hardening reaches them. That boundary
+belongs in a code comment and a test case that documents it as an accepted
+gap, not in silence that lets a future maintainer assume the gate is
+airtight.
+
+The genuinely unevadable version of this control does not live client-side
+at all: it's a **required status check in the forge's branch protection
+rules** (a server-side gate GitHub, GitLab, etc. enforce independently of
+anything the agent's toolchain does). A local hook is a high wall around the
+agent's normal working path; branch protection is the wall around the
+repository itself, enforced by infrastructure the agent has no access to
+modify. Client-side and server-side gates are complementary, not
+substitutes — adopt the hook because it's cheap and gives instructive
+denial messages, and treat "should this also be a required check" as a
+separate, standing question for anything moving real money or shipping to
+production.
+
+## Fail closed everywhere
+
+The through-line across every check in this section: a gate that cannot
+verify a condition must treat that as a denial, never as a pass. An
+unresolvable PR (the API call failed, auth expired, the number doesn't
+exist) denies. A head value that isn't a well-formed commit SHA denies,
+specifically because using an unvalidated value to build a file path is its
+own vulnerability class — a spoofed value could otherwise be crafted to
+make an unrelated file look like a valid approval. An unparseable or
+non-canonical command denies. None of these are edge cases worth a TODO;
+each is a place where "I'm not sure, so let it through" would quietly turn
+a gate back into a convention.
+
 ## Adopting this pattern
 
 A minimal version, in an afternoon:

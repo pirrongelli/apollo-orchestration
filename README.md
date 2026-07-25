@@ -80,7 +80,7 @@ The [`examples/`](examples/) directory contains genericized, directly usable ver
 |---|---|
 | [`examples/claude-md/`](examples/claude-md/) | A project-constitution template (`CLAUDE.md`) distilled from the production one — kept small (~200 lines) on purpose |
 | [`examples/rules/`](examples/rules/) | Path-scoped rules that auto-load only when a matching file is read — how the constitution stays small |
-| [`examples/hooks/`](examples/hooks/) | The guardrail hooks: protected-branch pushes, destructive SQL, deploy bypasses, and the cross-vendor merge gate |
+| [`examples/hooks/`](examples/hooks/) | The guardrail hooks: protected-branch pushes, destructive SQL, deploy bypasses, the cross-vendor merge gate (including a hardened standalone `merge-gate.sh` with bypass-resistant command parsing), and a session-start hook that surfaces in-flight loops/plans so a restarted session has initiative, not just state |
 | [`examples/agents/`](examples/agents/) | The five agent definitions: orchestrator, guardian, loop planner/executor/verifier |
 | [`examples/skills/`](examples/skills/) | A skill template plus two complete playbooks (safe migrations, webhook systems) |
 | [`examples/codex-review-rubric.md`](examples/codex-review-rubric.md) | The rules-based rubric that hardens the cross-vendor SHIP/BLOCK review |

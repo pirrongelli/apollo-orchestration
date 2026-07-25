@@ -184,6 +184,55 @@ A worked, tested implementation of the schema and checker lives in
 the full rationale and the test suite covering every allowed and disallowed
 edit.
 
+## Resumability vs. initiative
+
+Durable state was never the missing piece — VISION.md and the plan-progress
+ledger both survive a session restart just fine, sitting on disk exactly
+where the last session left them. The missing piece was that **nothing read
+them**. A session that restarts mid-campaign has no built-in reason to check
+whether one is already running; it just starts fresh, and the campaign goes
+silently forgotten from the model's perspective even though every fact about
+it is still sitting in the repo. This happened twice on one project, and
+both times it was only caught because a human happened to think to look and
+ask "wait, weren't we in the middle of something?" That is not a recovery
+mechanism — that is luck standing in for one.
+
+The fix is a `SessionStart` hook: read the loop-vision file and the
+progress ledger at the moment a session begins, and if either shows
+unfinished work, inject a short summary as additional context before the
+first message is even composed. The precision requirements are what make it
+useful instead of noisy:
+
+- Only headings that carry a loop ID count as loops; a plain prose section
+  heading must never be reported as one.
+- A loop marked closed is skipped, but a loop with **no status field at
+  all** — one that was opened and then the field was simply never filled in
+  — gets surfaced rather than silently treated as done. Missing information
+  is not the same as resolved information.
+- The ledger reports counts (done vs. pending) and names the plan file, so
+  the resuming session knows exactly where to pick up instead of re-deriving
+  it from the diff.
+- Output is capped, so a project with a long history of closed loops doesn't
+  flood the first turn with irrelevant completed work.
+
+The result: state on disk turns into **initiative** at the start of the very
+session that would otherwise have forgotten it. The hook doesn't decide
+anything — it just makes sure the first message accounts for what's already
+in flight.
+
+That last sentence is a deliberate boundary, not an accident: the hook
+reports, it does not act. We considered — and rejected — having it
+auto-resume the most recent loop or plan directly. Reading state and taking
+action from it are different risk categories. A hook that decides to keep
+executing a multi-step plan, unsupervised, the moment a session starts is
+making a commit-affecting decision before any human or orchestrating agent
+has looked at anything in the new session. On a codebase where a mistake
+moves real money, "the agent noticed unfinished work and quietly kept
+going" is a worse failure mode than "the agent noticed unfinished work and
+offered to resume it." Awareness plus a decision beats awareness plus
+autopilot — the same asymmetry that shows up everywhere else in this
+methodology: gates for the agent, judgment for the human.
+
 ## Why loops beat ad-hoc sessions
 
 For small work, a loop is overhead — just fix the bug. For campaigns, four structural properties compound:
