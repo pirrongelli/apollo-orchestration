@@ -241,6 +241,100 @@ function can still be badly named and still be well-factored by these
 proxies, but it cannot be a 25-branch, 0%-covered money router and pass
 quietly, because a number now says so instead of a feeling.
 
+## Ratchets: bounding what you cannot fix today
+
+CRAP is one instance of a more general pattern, worth naming on its own: a
+**ratchet** is what you reach for whenever the honest state of some quality
+signal is "this is bad, we cannot fix it today, and it must not get worse."
+That situation comes up constantly and has exactly two bad default
+responses. Ignore the debt, and it grows invisibly until someone is
+surprised by it in production. Or turn it into a hard error immediately, and
+every existing offender now blocks all work until someone pays down a
+backlog nobody budgeted time for — which in practice means the check gets
+disabled by the first person it blocks, and stays disabled.
+
+The pattern that avoids both: commit a **baseline** — a snapshot of the
+current bad state — to the repo, and gate on the *delta*, not the absolute
+number. A regression against the baseline fails the build. An improvement
+passes and prints a nudge to lower the baseline, so progress is captured
+instead of silently re-permitted next time. Raising the baseline is still
+possible, but only as an explicit, reviewable act (a flag like `--update`
+that rewrites the committed file) — it shows up in the diff and has to be
+justified like any other change, instead of happening by default because
+nobody wired up an alternative.
+
+The concrete case that motivated writing this down: a plain `eslint .` run
+has no `--max-warnings`, so warnings never fail the build and accumulate
+completely unnoticed. In one real codebase the warning count reached 108
+before anyone looked — and the majority of them had been introduced by the
+very quality work that turned on new, stricter rules over time. CI stayed
+green throughout, because errors were gated and warnings simply were not.
+Neither "ignore it" nor "make every warning an error and block everything"
+was viable at that point — the fix was a ratchet: commit the current count
+as a baseline, fail the build on any increase, and let a legitimate decrease
+pull the baseline down with it.
+
+**Compare per-category, not just the total.** A ratchet on the total count
+alone has a real blind spot: a change can fix two warnings of one rule and
+introduce two warnings of a different rule, and a total-only check sees a
+flat delta and passes. The two changes are not equivalent — one rule getting
+worse is a regression regardless of what improved elsewhere — so the
+comparison has to be per-category (per lint rule, per file, whatever the
+natural unit is) as well as in aggregate. A regression in *any* category
+fails, even if the sum nets out to zero.
+
+**Ratchet the escape hatches too, not just the primary signal.** A type
+ratchet that gates on type-*errors* has its own hole: a file carrying a
+file-level suppression directive (`@ts-nocheck` in TypeScript, or the
+equivalent in another type checker) is invisible to that gate, because the
+compiler never looks at it. The fix is a second, narrower ratchet: inventory
+every file using the suppression and ratchet the *set* — removals are
+progress and pass, any new file added to the set fails, and a rename counts
+as an addition plus a removal, because the escape hatch moved and deserves a
+fresh look rather than automatically inheriting its old approval. Point
+offenders at the narrower alternative — a line-level suppression
+(`@ts-expect-error` with a description) instead of a whole-file opt-out — so
+the instinct the failure teaches is "narrow the blast radius," not "add the
+file to some other allowlist."
+
+**Compare per file, not just per category.** Per-rule counts stop one rule paying
+for another, but they do not stop a warning *moving*. Fix one complexity warning in
+`a.ts`, add one in `b.ts`, and the total, the per-rule count and every summary
+number stay identical — the ratchet passes while the debt relocated into code
+someone just wrote. The baseline therefore records counts per file *and* per rule,
+and a file gaining warnings for a rule fails even when the totals are flat. We
+learned this from a reviewer, not from the tests: our own spec asserted the
+per-rule guarantee and was perfectly green while the hole was open. When a warning
+genuinely moved rather than appeared, regenerating the baseline is the answer — and
+that shows up in the diff, which is the point.
+
+**Fail closed on a missing baseline.** If the baseline file doesn't exist —
+first run, a typo in the path, someone deleted it — the correct behavior is
+to fail loudly with "no baseline found, run the update command and commit
+the result," never to treat "nothing to compare against" as "nothing wrong."
+A ratchet that passes silently when its own state is missing is worse than
+no ratchet: it looks green while checking nothing.
+
+**Where this generalizes.** Once you see the shape, it applies to any
+quality signal that has the "bad today, can't fix today, must not worsen"
+property: type-error counts during a gradual migration to strict mode, test
+coverage percentage, the CRAP/complexity ceiling above, lint warning counts,
+and escape-hatch inventories. All five are the same mechanism wearing
+different clothes — a committed baseline, a comparison that can only demand
+"same or better," and an explicit act required to move the goalposts the
+other way.
+
+**Verify a ratchet in both directions before trusting it.** The easy check —
+does it pass on a clean tree — proves almost nothing, because a ratchet that
+always passes and one that's silently broken look identical from that angle
+alone. The check that actually matters is whether it *fails* on a real
+regression: deliberately introduce one (bump a count, add a throwaway
+suppression directive), rerun the check, confirm it exits non-zero and names
+the specific offender, then revert the throwaway change. A gate nobody has
+ever watched fail is a gate nobody actually knows works — and the failure
+path is exactly the path that's easiest to skip testing, because "make sure
+it doesn't complain" feels like the whole job.
+
 ## What to enforce vs. what to report
 
 Blocking gates are expensive in trust — every false positive erodes

@@ -1,0 +1,33 @@
+{
+  "tsNocheck": {
+    "total": 3,
+    "files": [
+      "src/legacy/importer.ts",
+      "src/legacy/bulk-upload-form.tsx",
+      "test/utils/query-client-wrapper.tsx"
+    ],
+    "updatedAt": "2026-01-01",
+    "note": "Files opting out of type checking. This set may only shrink \u2014 a new @ts-nocheck fails the gate. Removing one is progress: regenerate with --update."
+  },
+  "lintWarnings": {
+    "total": 12,
+    "byRule": {
+      "complexity": 9,
+      "react-hooks/exhaustive-deps": 3
+    },
+    "updatedAt": "2026-01-01",
+    "note": "ESLint warnings may only decrease, per rule AND per file. A warning that MOVES between files keeps every total flat, so byFileRule is what catches it. Regenerate with --update and justify any increase in review.",
+    "byFileRule": {
+      "src/legacy/importer.ts": {
+        "complexity": 5,
+        "no-console": 1
+      },
+      "src/legacy/report-builder.ts": {
+        "complexity": 4
+      },
+      "src/ui/data-table.tsx": {
+        "complexity": 2
+      }
+    }
+  }
+}

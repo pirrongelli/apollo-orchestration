@@ -86,7 +86,7 @@ The [`examples/`](examples/) directory contains genericized, directly usable ver
 | [`examples/codex-review-rubric.md`](examples/codex-review-rubric.md) | The rules-based rubric that hardens the cross-vendor SHIP/BLOCK review |
 | [`examples/loops/`](examples/loops/) | Immutable feature lists + a fail-closed checker for long-horizon, multi-session work |
 | [`examples/memory/`](examples/memory/) | The memory system: index template and one-fact-per-file memory examples |
-| [`examples/quality/`](examples/quality/) | The CRAP (Change Risk Anti-Patterns) risk metric: library, CLI report, spec, and the ratchet rules that keep the gate from being switched off |
+| [`examples/quality/`](examples/quality/) | The CRAP (Change Risk Anti-Patterns) risk metric plus two more ratchets — lint warnings and type-check escape hatches — with libraries, CLIs, specs, and the rules that keep each gate from being switched off |
 
 ## The principles in one paragraph
 
