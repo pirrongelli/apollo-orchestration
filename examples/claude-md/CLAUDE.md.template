@@ -169,8 +169,10 @@ Speed comes from parallelism and from not re-deriving what a skill already encod
    - **QA reviewer** — correctness, edge cases, error states, accessibility.
    - **Product reviewer** — does this meet the acceptance criteria, and is the flow
      usable.
-2. Each writes findings to `reviews/<feature>-round-N.md` with a verdict of `PASS` or
-   `CHANGES_REQUIRED` and a numbered list of blocking issues.
+2. Each writes findings to its own file — `reviews/<feature>-round-N-qa.md` and
+   `reviews/<feature>-round-N-product.md` — with a verdict of `PASS` or
+   `CHANGES_REQUIRED` and a numbered list of blocking issues. Never a shared path:
+   the reviewers run in parallel and would overwrite each other's verdict.
 3. Any `CHANGES_REQUIRED` means fix the blocking issues and start the next round.
 4. The loop exits on `PASS` from both, or after round 3. If round 3 still fails, stop
    and escalate to the owner with the open issues listed.
