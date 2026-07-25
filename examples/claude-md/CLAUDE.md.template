@@ -148,6 +148,39 @@ Speed comes from parallelism and from not re-deriving what a skill already encod
   records), will it leave the data correct after 1000 real runs? If manual cleanup is
   needed after deploying code, the code has a bug.
 
+## Development Workflow Rules
+
+### Frontend work
+
+- Load the design and component-library skills before writing any UI code.
+- Build on the existing component primitives. Don't hand-roll a component the
+  library already ships.
+- After implementation, capture a screenshot of the running view and include it in
+  the response. Never report UI work as done without one.
+
+### Backend work
+
+- Load the backend and architecture skills before writing service, schema, or API code.
+- The architecture decision goes in a short ADR **before** implementation.
+
+### Review loop (mandatory, max 3 rounds)
+
+1. Each round spawns two reviewers in parallel:
+   - **QA reviewer** — correctness, edge cases, error states, accessibility.
+   - **Product reviewer** — does this meet the acceptance criteria, and is the flow
+     usable.
+2. Each writes findings to `reviews/<feature>-round-N.md` with a verdict of `PASS` or
+   `CHANGES_REQUIRED` and a numbered list of blocking issues.
+3. Any `CHANGES_REQUIRED` means fix the blocking issues and start the next round.
+4. The loop exits on `PASS` from both, or after round 3. If round 3 still fails, stop
+   and escalate to the owner with the open issues listed.
+
+### Goal definition
+
+- At the start of any task, write the goal and its acceptance criteria to
+  `reviews/<feature>-goal.md` as a checklist.
+- The loop above terminates only when every checklist item is checked.
+
 ## Verification Discipline
 
 ### Verify before coding
