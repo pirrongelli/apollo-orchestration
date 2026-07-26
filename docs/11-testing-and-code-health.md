@@ -85,7 +85,7 @@ above, not from a formula: 30 is roughly "complexity 5 with literally no
 tests," which is the bar past which we don't want to discover a bug in
 production.
 
-## Making the gate survivable — three rules learned in practice
+## Making the gate survivable — five rules learned in practice
 
 A risk metric that is technically correct but operationally unusable gets
 switched off within a week. Three design decisions made the difference
@@ -150,6 +150,100 @@ that can afford the full test suite. The per-PR complexity-only gate answers
 "did this change introduce an untestably complex function" immediately; the
 nightly full-CRAP job answers "is anything complex AND undertested" with a
 day's lag. Both numbers matter; only one of them is affordable on every push.
+
+### 4. A required check must always run and always report
+
+The obvious way to keep a slow job off unrelated pull requests is a
+workflow-level path filter. It is also the way to break it: a filtered-out job
+is reported as *skipped*, not *passed*, and a required check that never reports
+leaves the pull request waiting forever. What happens next is predictable —
+somebody removes it from the required list to unblock a merge, and the gate is
+gone for good.
+
+So the job always starts, and decides internally whether there is work to do.
+When there isn't, it prints why and exits zero. The status is always present,
+always green or red, never absent. Skipping work is fine; skipping the *report*
+is what kills gates.
+
+### 5. A gate must gate on its own runner
+
+A path filter that lists only the code under test leaves the gate's own
+machinery outside its coverage: the workflow file, the script it invokes, the
+manifest entry naming that script. A pull request touching only those does not
+trigger the job — which means the gate can be weakened, misconfigured, or
+quietly disabled by exactly the change it exists to catch, and it will report
+success while that happens.
+
+The filter has to include the runner as well as the run: the workflow, any
+helper script, the package manifest, and the files whose invariant the gate
+asserts. This sounds pedantic until you notice that the failure is silent and
+self-concealing — the gate does not warn you it stopped watching.
+
+## Security tests that pass for the wrong reason
+
+A test that asserts something *exists* fails loudly when it breaks. A test that
+asserts something is *absent* — this user cannot read that row, this caller is
+denied — passes by default, and passes just as cheerfully when the thing it was
+guarding has been removed entirely. Authorization suites are made almost
+entirely of the second kind. That asymmetry deserves more suspicion than it
+usually gets.
+
+We learned this from a row-level-security suite that had been dead for months.
+Six of its seven files could not produce a single passing assertion: one seeded
+a table that a migration had dropped, another inserted a row missing a
+`NOT NULL` column, another called an assertion helper that did not exist in the
+installed version, two more emitted no test-protocol output at all so the runner
+scored them "no plan found" and moved on. Nothing in CI or the package manifest
+ever invoked the suite, so none of this surfaced. The tests had been written,
+reviewed, merged — and then quietly stopped meaning anything, which is a
+different and worse state than never having been written, because the repository
+still advertised the coverage.
+
+Three specific mistakes are worth naming, because each one produces a green run.
+
+**Asserting under a session that bypasses the rules.** The suite's test helper
+set the request's identity claims but never changed the database role. The
+session stayed superuser, row-level security therefore never applied at all, and
+every "this user cannot see that" assertion passed without evaluating a single
+policy. The helper looked authoritative — it was named for authenticating as a
+user — and it was the reason none of the assertions meant anything.
+
+The defence is a **negative control**: run the same count twice, once
+privileged and once restricted, and assert the two differ. If they ever agree,
+the harness has stopped enforcing anything and every other assertion in the file
+is void. This costs two assertions and is the only thing standing between you
+and a suite that cannot fail.
+
+**Denial tests with nothing to deny.** Asserting that a non-admin sees zero rows
+proves nothing unless that user owns a row which a weakened policy *would* have
+shown them. Otherwise the zero means "nothing matched", not "the check held" —
+and deleting the authorization clause from the policy leaves the test green. In
+our case the policy required both row ownership and an administrator role;
+because no fixture row belonged to the non-administrator, the entire
+administrator half of the policy was untested.
+
+The only way to know which of those you have is to break it on purpose: remove
+the clause, rerun, confirm the test goes red, restore. Mutation is a heavyweight
+discipline applied wholesale, but applied to a handful of authorization
+assertions it is minutes of work and it is the difference between a security
+test and a decoration.
+
+**Overlapping grants that mask a branch.** When access is granted through two
+independent paths — direct ownership *or* explicit membership — a fixture user
+who satisfies both makes each path individually untestable. Either can regress
+with the assertion still passing through the other. Give each branch a user who
+satisfies exactly that one.
+
+The instructive detail: the seed that caused this described itself in a comment
+as "defensive", granting the owner a membership row as well "so the test still
+passes if the ownership policy isn't applied in this environment". That is a
+test engineered not to fail. The impulse is understandable — a red test in an
+environment you do not control is annoying — but a test that cannot go red is
+not a weaker test, it is a false statement about the system, and it is reported
+to you in the same green as the real ones.
+
+The runnable versions of all three, with the mutations that prove they fail, are
+in [`examples/database-tests/`](../examples/database-tests/).
 
 ## The test pyramid, as a decision rule
 
@@ -355,3 +449,16 @@ rule at all, because it creates false confidence. If the CI budget only
 allows a complexity check on every push and a full CRAP check nightly, say
 exactly that in the tool's own output — don't let "gate" imply more coverage
 than the gate actually has.
+
+The smallest version of this failure is a comment. We pinned a tool version in
+one workflow and wrote, beside it, that it matched the deploy workflows —
+because at that moment it did. Nothing checked it, so the sentence was true by
+coincidence and would stay in the file long after it stopped being true, read by
+everyone as though it were a constraint. A comment cannot hold an invariant up;
+it can only describe one that something else enforces. When you notice you have
+written one, you have two honest options — assert it in code, or delete the
+claim — and the choice should turn on whether the invariant is worth the check,
+not on which is less work. Ours was worth about thirty lines, and writing them
+immediately surfaced that the real invariant was subtler than the comment: what
+matters is not the declared version constant but the value actually handed to
+the install step, which can differ.

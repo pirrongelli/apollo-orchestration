@@ -1,0 +1,112 @@
+# A blocking, path-gated database-test job.
+#
+# The suite this guards had been dead for months: the schema moved on, the tests
+# still referenced a dropped table, and nothing in CI or package.json ever ran
+# them — so nobody found out. Two design choices below exist because of that.
+#
+# 1. The job ALWAYS runs and ALWAYS reports, and decides internally whether to do
+#    the work. It does not use a workflow-level `paths:` filter. A required check
+#    that is *skipped* rather than *passed* leaves a PR waiting forever, which is
+#    how "required" checks quietly get un-required again.
+#
+# 2. The path filter covers the job's OWN runner as well as the code under test:
+#    the workflow file, the package manifest holding the script it calls, the
+#    helper script, and the deploy workflows it asserts parity against. A gate
+#    that does not gate on itself can be weakened in a PR that the gate skips.
+#
+# See ../../docs/11-testing-and-code-health.md, "Security tests that pass for the
+# wrong reason" and "Making the gate survivable".
+
+name: Database Tests
+
+on:
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Pinned to match the deploy workflows so the suite cannot validate migrations
+  # on one CLI while a different one applies them. The match is asserted at
+  # runtime by the parity step below — not merely claimed in this comment.
+  CLI_VERSION: '2.101.0'
+
+jobs:
+  database-tests:
+    runs-on: ubuntu-latest
+    name: Database Suite
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect changed paths
+        id: changes
+        # Interpolations go through env rather than into the script body: the
+        # standard guard against expression injection in `run:` blocks.
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "Manual dispatch — running the suite"
+            echo "db=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Fail open: if the base commit is unavailable we run the suite rather
+          # than silently skipping it. An unknown answer is not a green one.
+          if [ -z "$BASE_SHA" ] || ! git cat-file -e "$BASE_SHA" 2>/dev/null; then
+            echo "Base commit unavailable — running the suite (fail-open)"
+            echo "db=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "Changed files:"; echo "$CHANGED"
+
+          db=false
+          # The schema the tests assert against, and the suite itself.
+          echo "$CHANGED" | grep -qE '^db/(migrations|tests)/' && db=true
+          # The job's own runner: workflow, script entry point, helper script.
+          echo "$CHANGED" | grep -qE '^\.github/workflows/database-tests\.yml$'        && db=true
+          echo "$CHANGED" | grep -qE '^package\.json$'                                 && db=true
+          echo "$CHANGED" | grep -qE '^\.github/scripts/check-cli-version-parity\.py$' && db=true
+          # The other half of the version-parity invariant asserted below.
+          echo "$CHANGED" | grep -qE '^\.github/workflows/deploy-(dev|staging|production)\.yml$' && db=true
+
+          echo "db=$db" >> $GITHUB_OUTPUT
+          echo "→ db=$db"
+
+      - name: No database changes — skipping
+        if: steps.changes.outputs.db != 'true'
+        run: echo "No relevant changes. Nothing to test."
+
+      - name: Assert CLI version parity with the deploy workflows
+        if: steps.changes.outputs.db == 'true'
+        run: python3 .github/scripts/check-cli-version-parity.py
+
+      # Bringing the stack up applies every migration to an empty database, so
+      # the job doubles as a migration check.
+      - name: Start database and apply migrations
+        if: steps.changes.outputs.db == 'true'
+        run: npm run db:start
+
+      - name: Run database test suite
+        if: steps.changes.outputs.db == 'true'
+        run: npm run test:db
+
+      - name: Dump database logs on failure
+        if: failure() && steps.changes.outputs.db == 'true'
+        run: npm run db:logs || true
+
+      - name: Stop database
+        if: always() && steps.changes.outputs.db == 'true'
+        run: npm run db:stop || true
