@@ -27,6 +27,9 @@ complexity by untested-ness so risk actually concentrates where it should.
   Verified passing (15/15).
 - `quality-baselines.example.json` — the baseline file shape both ratchets
   read and write, with small illustrative numbers.
+- `doctrine-invariants.mjs` — a guard for the project constitution itself:
+  pins load-bearing rules and cross-checks its enforcement claims. Ships a
+  `--selftest` mode. Verified passing (10/10).
 - This README.
 
 ## The formula
@@ -209,3 +212,106 @@ confirm the non-zero exit and the named offender, then revert the
 throwaway change). A gate nobody has ever seen fail is a gate nobody knows
 works — the failure path is the one that matters and the one that's easiest
 to skip testing.
+
+## `doctrine-invariants.mjs`: a gate for the constitution itself
+
+Every gate above watches code. Nothing watches the file the *agent* obeys.
+The project constitution (`CLAUDE.md`, `CONVENTIONS.md`, `AGENTS.md` —
+whatever yours is called) is plain prose that no linter parses, no type
+checker reads, and no test imports. It can be rewritten, shortened for
+context budget, or reflowed by a model, and every check in the repository
+stays green while a safety rule disappears.
+
+This practice was adopted from
+[ponytail](https://github.com/DietrichGebert/ponytail), which pins the
+load-bearing phrases of its own instruction file the same way.
+
+### What it catches
+
+Two things, in both directions:
+
+1. **Dropped invariants.** A list of short, literal phrases that must still
+   appear in the constitution, each with a one-line *why* recorded next to
+   it — so the person who trips the guard can read what they are about to
+   delete instead of guessing. Whitespace is flattened before comparison,
+   because the file is hard-wrapped and a pinned phrase routinely spans two
+   lines; reflowing a paragraph is not a rule change and a guard that says
+   it is gets switched off by Friday. But the flattening is scoped to a
+   **block** — text between blank lines, headings and list items — not to
+   the whole file, so a phrase cannot match by joining the tail of one
+   paragraph to the head of the next.
+2. **False enforcement claims.** Every hook path the constitution names must
+   exist on disk *and* be registered in the agent config — and, checked the
+   other way, every hook the config registers must exist on disk. A claimed
+   hook that isn't registered means the rule is a convention wearing a
+   wall's clothes. A registered hook that isn't there means a wall that
+   silently never fires. The config is **parsed**, not text-scanned, and hook
+   paths are read out of the parsed object: a file that merely contains a
+   hook path but does not parse registers nothing, because the harness cannot
+   load it either.
+
+A missing config, or one that is not valid JSON, **fails closed**: the guard
+cannot confirm a single enforcement claim, and a check that cannot verify
+must not pass.
+
+The documented ceiling, written at the top of the file so nobody
+over-trusts it: a pin only asks "does this phrase still appear in *some*
+block." Surgically relocating a rule into a weaker section, or deleting one
+of two mentions, passes. It catches wholesale removal and false enforcement
+claims, which are the two failures that actually happened. The upgrade path
+if that stops being enough is section-scoped pinning — require the phrase
+inside the heading it belongs to.
+
+### The two incidents that produced it
+
+**A rewrite silently dropped a safety rule.** Consolidating the constitution
+for length removed the clause requiring an independent review to be recorded
+against the exact commit being merged. Nothing failed. Lint, types, tests,
+build, the whole quality gate — all green, because none of them read that
+file. A human reading the diff caught it, which is exactly the kind of catch
+you cannot schedule.
+
+**The constitution claimed a wall that did not exist.** A rule said it was
+"enforced by" a hook path, and the hook was not on disk. That is worse than
+an honest convention: an admitted convention gets the caution it deserves,
+while a false enforcement claim buys confidence nobody paid for. The same
+class of bug in reverse — a hook registered in the config whose file was
+never committed — produces a wall that never fires and never complains.
+
+### Wiring it into CI
+
+Run the selftest **before** the real check, in the same job, always:
+
+```bash
+node doctrine-invariants.mjs --selftest   # prove the instrument
+node doctrine-invariants.mjs              # then trust the measurement
+```
+
+The order is the point. The selftest builds throwaway fixtures in a temp
+directory — two known-good, and one known-bad per failure class — and
+asserts the guard passes the good ones and *catches* every one of the others.
+If the guard has been broken (a bad refactor of the matcher, an over-eager
+normalisation), the selftest goes red first, so you never read a green real
+run that means nothing. Both commands exit non-zero on failure; wire them as
+two lines of the same step.
+
+Three of the known-bad fixtures are there because an **independent review
+attacked the first version and found three ways to weaken a constitution
+while the guard still exited 0**: malformed config text-scanned as if it
+registered hooks, a pin matching across a paragraph break, and a hook
+filename with an underscore that the path pattern could not see. The
+selftest of that first version passed all its own cases. It tested what its
+author expected to fail, not what an attacker would try — which is the
+argument for keeping a reviewer from a different model vendor pointed at the
+guard itself, not only at the code the guard watches. Every attack found this
+way should become a permanent fixture; that is how the finding outlives the
+review.
+
+Include the guard's own path in whatever path filter triggers the job, and
+include the constitution and the agent config. A gate that doesn't watch its
+own runner can be disabled by the very change it exists to catch.
+
+When the guard fails on a *deliberate* rewording, the fix is to update the
+pin in the same commit. That edit shows up in the diff, which is the whole
+mechanism: the guard does not prevent changing a rule, it prevents changing
+one without anyone noticing.

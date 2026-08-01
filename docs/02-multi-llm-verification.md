@@ -312,6 +312,38 @@ non-canonical command denies. None of these are edge cases worth a TODO;
 each is a place where "I'm not sure, so let it through" would quietly turn
 a gate back into a convention.
 
+## A constitution needs its own gate
+
+Everything above assumes the rules still say what you think they say. They
+live in a prose file — the project constitution — that nothing in CI reads.
+No linter parses it, no type checker sees it, no test imports it. A rewrite
+can delete a safety rule and every check in the repository stays green,
+because none of them were ever looking.
+
+That is not hypothetical for us twice over. A consolidation pass removed the
+clause requiring an independent review to be recorded against the exact
+commit being merged; only a human reading the diff noticed. Separately, the
+constitution claimed a rule was enforced by a hook that did not exist on
+disk — which is worse than an admitted convention, because an admitted
+convention gets the caution it deserves and a false enforcement claim buys
+confidence nobody paid for.
+
+So the constitution gets a gate of its own, doing two things:
+
+- **Pin the load-bearing phrases.** A short list of literal substrings that
+  must survive any rewording, each with a recorded *why*. Rewording one on
+  purpose trips the check, and updating the pin in the same commit is the
+  review trigger — the guard does not stop you changing a rule, it stops you
+  changing one without anyone noticing.
+- **Resolve every enforcement claim.** Any hook the constitution names must
+  exist on disk *and* be registered in the agent config; any hook the config
+  registers must exist. Both directions, because each has its own silent
+  failure — a rule that is only a convention, and a wall that never fires.
+
+Practice adopted from [ponytail](https://github.com/DietrichGebert/ponytail).
+Runnable, genericized implementation with its own selftest:
+[`examples/quality/doctrine-invariants.mjs`](../examples/quality/doctrine-invariants.mjs).
+
 ## Adopting this pattern
 
 A minimal version, in an afternoon:

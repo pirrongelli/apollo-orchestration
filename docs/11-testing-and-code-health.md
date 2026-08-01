@@ -429,6 +429,94 @@ ever watched fail is a gate nobody actually knows works — and the failure
 path is exactly the path that's easiest to skip testing, because "make sure
 it doesn't complain" feels like the whole job.
 
+## Prove the instrument before you trust the measurement
+
+The ratchet rule above — verify it fails, not just that it passes — is worth
+promoting from a footnote about ratchets to a rule about every gate we own.
+Stated generally: **each gate ships a known-bad fixture it must catch and a
+known-good fixture it must pass, and that selftest runs *before* the real
+check in the same CI job.** A guard nobody has ever watched fail is
+decoration. It occupies the slot where a control should be, it reports green
+on every run, and there is no observation that distinguishes it from a
+working one until the day it was supposed to catch something.
+
+The ordering matters as much as the existence. If the selftest runs after the
+real check, or in a separate job, you can read a green real run produced by a
+broken instrument and never know. Run it first, and a broken guard goes red
+before it has a chance to tell you anything reassuring. Two lines, one step:
+
+```bash
+node scripts/quality/<gate>.mjs --selftest   # prove the instrument
+node scripts/quality/<gate>.mjs              # then trust the measurement
+```
+
+The fixtures should be built and torn down in a temp directory by the script
+itself — no committed fixture tree to drift out of sync — with one case per
+failure class the guard claims to detect, plus at least one case that must
+*pass*. A selftest made only of known-bads passes trivially if the guard is
+rewired to fail on everything.
+
+**Our own scar.** We once shipped a ratchet against a baseline that had gone
+stale, and verified it by reading the tail of the command's output instead of
+its exit code. The tail said what we expected. The exit code said otherwise,
+and nobody looked. We recorded a pass that had never happened, and the gate
+sat green over a regression for days. Two habits came out of that: assert on
+exit codes, never on the shape of console output; and make the gate prove
+itself on fixtures whose correct verdict is known in advance, so a stale or
+misconfigured input surfaces as a red selftest rather than a confident wrong
+answer.
+
+**A selftest inherits the blind spots of whoever wrote the guard.** The
+constitution guard linked below is a first-person example of its own thesis.
+Its first version shipped with a selftest, passed it, and was still broken
+three ways: a malformed config file was text-scanned and counted as
+registering hooks it could not possibly register; a pinned phrase could match
+across a paragraph break, so deleting the real rule and leaving its words
+scattered in unrelated sentences passed; and hook filenames containing an
+underscore were invisible to the pattern, which is precisely the
+false-enforcement-claim class the guard exists to catch. An independent
+review found all three. The selftest found none of them, because its fixtures
+tested what the author expected to fail rather than what an attacker would
+try — the same mental model that leaves a hole writes the fixtures that would
+have exposed it. So a selftest proves the instrument is not *obviously*
+broken and nothing more; it does not replace an independent reviewer, ideally
+a different model vendor, whose job is to attack the guard itself rather than
+the code the guard watches. Each of those three attacks is now a permanent
+fixture, which is the only durable form the lesson takes.
+
+**The stronger version, when the measurement compares arms.** Any time you
+run a comparison — with and without a tool, before and after a practice, a
+treatment arm against a control — the control arm should *fail* the gates
+that the treatment arm passes. That is what makes the comparison a
+measurement rather than a ceremony. If every arm passes, the gate has no
+discriminating power and the result you are about to publish is about
+nothing. Design the control so you can predict which checks it breaks, then
+confirm it breaks exactly those.
+
+**Contamination is real, and it must be reported rather than buried.** A
+published benchmark in this ecosystem compared a coding-agent plugin against
+a control arm — and the control arm was silently running the very plugin
+under test, because the plugin's session-start hook fired on every session
+regardless of arm. Every number in the comparison measured the treatment
+against itself. The authors' response is the part worth copying: they marked
+the published result **superseded**, in place, rather than quietly restating
+the numbers and moving on. A measurement you later discover was contaminated
+is not an embarrassment to manage; it is a finding, and suppressing it costs
+more credibility than the original error ever did. Assume your harness leaks
+into your control until you have checked, and check by looking for the
+treatment's fingerprints in the control's output, not by reasoning about how
+the harness *should* behave.
+
+This is the same doctrine as the ratchet, one level up. A ratchet asks "is
+the codebase getting worse"; a selftest asks "is the thing that answers that
+question still working". Both are cheap, both are skipped for the same
+reason — the passing path feels like the whole job — and both fail silently
+and self-concealingly when skipped. A runnable example that pins the rules
+of a project constitution and selftests itself against two known-good and
+eight known-bad fixtures — three of them attacks an independent review
+found — is in
+[`examples/quality/doctrine-invariants.mjs`](../examples/quality/doctrine-invariants.mjs).
+
 ## What to enforce vs. what to report
 
 Blocking gates are expensive in trust — every false positive erodes

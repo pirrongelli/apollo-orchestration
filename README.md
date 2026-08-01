@@ -86,12 +86,53 @@ The [`examples/`](examples/) directory contains genericized, directly usable ver
 | [`examples/codex-review-rubric.md`](examples/codex-review-rubric.md) | The rules-based rubric that hardens the cross-vendor SHIP/BLOCK review |
 | [`examples/loops/`](examples/loops/) | Immutable feature lists + a fail-closed checker for long-horizon, multi-session work |
 | [`examples/memory/`](examples/memory/) | The memory system: index template and one-fact-per-file memory examples |
-| [`examples/quality/`](examples/quality/) | The CRAP (Change Risk Anti-Patterns) risk metric plus two more ratchets — lint warnings and type-check escape hatches — with libraries, CLIs, specs, and the rules that keep each gate from being switched off |
+| [`examples/quality/`](examples/quality/) | The CRAP (Change Risk Anti-Patterns) risk metric plus two more ratchets — lint warnings and type-check escape hatches — with libraries, CLIs, specs, and the rules that keep each gate from being switched off; plus a guard for the project constitution itself, which pins its load-bearing rules and checks that its enforcement claims resolve to real, registered hooks |
 | [`examples/database-tests/`](examples/database-tests/) | A runnable row-level-security suite showing the three ways an authorization test passes for the wrong reason, the CI job that runs it, and a parity checker replacing a comment that claimed an invariant nothing enforced |
 
 ## The principles in one paragraph
 
 Give the AI a clear objective and full technical autonomy inside hard walls. Make "done" verifiable by command, never by opinion. Never let the model that wrote the code judge whether it merges — use a different vendor and enforce the verdict with a deterministic hook, not a promise. Encode every lesson where it can't be forgotten: incidents become memories, memories become rules, and the worst ones become hooks. Spend strong-model tokens on design and judgment, cheap-model tokens on mechanical execution, and human attention only where money, customers, or irreversibility are involved.
+
+## How we know
+
+Not every claim in this repository is backed by the same kind of evidence,
+and pretending otherwise would undermine the ones that are. Each major
+practice falls into one of three honesty classes:
+
+- **Measured** — there is a number we can reproduce by re-running a command.
+  Very little qualifies: the complexity and CRAP scores the risk gate
+  computes, the lint-warning and escape-hatch baselines the ratchets compare
+  against, the pass counts of the runnable specs in `examples/`, and the
+  selftest results of the gates that ship one. These are reproducible because
+  the tool that produces them is in this repo.
+- **Incident-derived** — a specific failure produced the rule. This is the
+  large majority of what is written here: the cross-vendor review gate and
+  its per-SHA hook, the hook hardening, fail-closed everywhere, the memory
+  system, disjoint file ownership between parallel agents, the constitution
+  guard, replace-the-named-path over shipping a parallel panel, the
+  ratchet-to-touched-code rule. Each exists because something cheaper failed
+  first, and the write-ups name the failure rather than the principle.
+  Incident-derived is strong evidence that a problem is real; it is *not*
+  evidence that our fix is the best available one.
+- **Untested opinion** — it seems right and we have not proven it. Model
+  routing economics (strong model for design, cheap model for mechanical
+  execution) is a judgement call we have never A/B'd. The specific numeric
+  thresholds (CRAP 20/30, complexity 15, the ~150–200 line component
+  guideline) are reasoned from reference points, not tuned against outcome
+  data. The claim that the staged adoption path in chapter 09 is the *right*
+  order is an opinion. So is most of the advice about what belongs in a skill
+  versus a rule.
+
+**The discipline that keeps this honest: never print a per-repo savings
+number.** There is a standing temptation to write "this saved N hours" or
+"cut costs by X%". We do not, and neither should anything generated from
+this methodology, for a structural reason rather than a modest one: the
+version of the work that was never built has no measurement. There is no
+baseline to subtract from — no unbuilt platform to time, no counterfactual
+team to compare against — so any such figure is fabricated by construction,
+however carefully it is hedged. Report what a command outputs, report what
+an incident cost, and leave the savings arithmetic to whoever has a real
+control arm.
 
 ## What this is not
 
