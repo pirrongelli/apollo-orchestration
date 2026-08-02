@@ -167,7 +167,58 @@ The general lesson: automated review is an input, not an instruction. The judgme
 
 ---
 
-## 7. The meta-lesson: methodology is scar tissue
+## 7. The modal that clipped its own content
+
+### What happened
+
+An operator opened a detail modal and every row was cut off at the same vertical line — identifiers half-visible, amounts pushed out of view. A platform-wide audit found the modal layer had no standard at all: eleven different hand-written width overrides across ~90 call sites, some modals fixed at half the width their authors asked for, others overflowing the phone viewport entirely.
+
+Two mechanisms, both invisible in review, produced this:
+
+1. **A class-merge utility silently resolving conflicts.** The base dialog carried a responsive default (`max-w-[calc(100%-2rem)] sm:max-w-lg`). A consumer passing a bare `max-w-2xl` erased the unprefixed viewport guard (same merge group) but *not* the `sm:`-prefixed default — which then won at desktop widths in the generated CSS. Result: the author wrote "672px" and got 512px, plus a lost mobile gutter. Every author copied the pattern from the previous modal, so the bug metastasized politely.
+2. **CSS grid min-content blowout.** The dialog container was `display: grid` without an explicit `grid-cols-1` (`minmax(0,1fr)`). One wide child — a comparison table — inflated the implicit column's min-content beyond the modal's width, pushing *every sibling's* right edge out of the box. That is why all rows clipped at the same line: the whole grid was wider than its container.
+
+### Why the naive setup allowed it
+
+A shared component that accepts arbitrary `className` makes every consumer a co-author of its layout contract. The class-merge utility resolves conflicts deterministically but *silently* — there is no warning when a consumer's utility erases a base guard, and the failure only shows at viewport sizes nobody screenshots. Review sees one plausible-looking class string per call site; no single diff ever contained the inconsistency.
+
+### The rules it became
+
+**Size is a prop, not a class.** The dialog exposes a closed scale (`sm | md | lg | xl | 2xl | full`); the base always carries the non-negotiable guards (viewport width cap, max-height + internal scroll, unbreakable-string wrapping, `grid-cols-1`). Wide children scroll inside their own `overflow-x-auto` wrapper.
+
+**The standard enforces itself.** A lint rule (`no-restricted-syntax` on the component's `className` string literals) rejects width/height/overflow utilities at the call site, and a base-component test pins the guards so they cannot be refactored away. Documentation alone would have decayed within a month — the ~90 call sites proved that.
+
+## 8. The test budget a hub file blew through
+
+### What happened
+
+CI ran only the tests affected by each PR's diff (`vitest --changed`), with a tight job timeout tuned to that selection staying small. A PR touching a UI primitive — imported, transitively, by nearly every test file — degenerated the selection into the full suite, which cannot fit the budget on CI runners. The gate SIGTERM'd the run and reported "cancelled", which reads like infrastructure noise rather than a design limit; the first response was to re-run it, wasting another half hour.
+
+### Why the naive setup allowed it
+
+Selective testing budgets are sized for the *median* diff. Nothing in the setup acknowledged the degenerate case: a hub file turns "affected by diff" into "everything". The timeout was doing double duty — hang-killer and implicit performance promise — and the second duty broke first.
+
+### The rule it became
+
+**Size the ceiling for the degenerate case, and know which duty the timeout serves.** A job timeout is a hang-killer, not a speed target: normal PRs still finish in a quarter of the budget, and the ceiling only exists to stop a wedged runner from burning an hour. The design comment in the workflow now names the hub-file case explicitly so the next tightening doesn't reintroduce the trap.
+
+A related footnote from the same incident chain: when a PR's green depends on something that just merged into the base branch, re-running its checks must *refresh the merge ref* (close/reopen, or a new event) — a re-run racing the dependency's merge re-tests against the old base and fails with a signature that looks impossible.
+
+## 9. Two hooks, one cache key
+
+### What happened
+
+A new hook resolved record identifiers to display names and cached the lookup under `['customer-name', id]`. A search-picker component elsewhere on the *same admin page* already owned that exact key — holding a plain string where the new hook stored a row object. The client-side cache keys by key alone: whichever query resolved first poisoned the other. One order crashed the page ("objects are not valid as a React child"); the other direction silently degraded the new feature back to the raw identifiers it existed to remove. An independent reviewer caught it pre-merge by *empirically reproducing* the collision against the query library — not by reading the diff, where both hooks looked correct in isolation.
+
+### Why the naive setup allowed it
+
+Query-cache keys are a global, untyped namespace, and nothing warns on reuse. Each hook is locally reasonable; the collision only exists at the page level, in a file the diff never touched. Grep-able only if you already suspect it.
+
+### The rules it became
+
+**Namespace cache keys by owning feature** (`['feature', 'entity', id]`), never by bare noun. **Guard the collision, not just the behavior**: the regression test seeds the cache with the *other* owner's key and value shape, then asserts the new hook still resolves independently and leaves the neighbor's entry untouched. The pre-fix version of that test fails; the behavioral assertions alone do not (a stale-cache refetch heals the shape before they run) — which is itself the lesson: the load-bearing assertion is the one that encodes the collision.
+
+## 10. The meta-lesson: methodology is scar tissue
 
 Look at the trajectory each story follows, because it is always the same trajectory:
 
