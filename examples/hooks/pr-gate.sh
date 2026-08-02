@@ -38,6 +38,9 @@ printf '%s' "$norm" | grep -qiE ' gh( [[:alnum:]]+)* pr( [[:alnum:]]+)* create '
 # taken from git itself, never from the command string, so it is safe to use
 # in a file path.
 sha=$(git rev-parse HEAD 2>/dev/null) || deny "PR gate: cannot resolve HEAD in $(pwd), so test evidence cannot be verified. Run from inside the repo, or use the ! prefix."
+# Check evidence from the repo toplevel: the preflight writes there, and the
+# PR command may be issued from a subdirectory — without this, a false deny.
+cd "$(git rev-parse --show-toplevel 2>/dev/null)" || deny "PR gate: cannot resolve the repo toplevel, so test evidence cannot be verified."
 
 [ -f ".claude/test-evidence/$sha" ] && exit 0
 

@@ -218,6 +218,13 @@ Two decisions worth copying:
   run targeted tests; the full relevant suites run once, right before
   the PR.
 
+A test-suite trap the independent review caught in our own version: when a
+hook's "allow" is silence (exit 0, no output), a deny assertion built on
+`jq -e` alone is vacuous — **`jq -e` on empty input exits 0**, so an allow
+scores as a deny-pass and the suite stays green with the gate deleted.
+Guard with `[ -n "$out" ] &&` before the jq check, then prove the teeth by
+mutation: remove the gate line, watch the deny cases go red, revert.
+
 The companion policy that makes this more than bookkeeping: if the
 preflight surfaces broken tests **unrelated** to your change, fix them
 anyway (in their own commit, so the reviewer can trace them). Red suites
