@@ -192,6 +192,39 @@ orchestrator decision is the safer default. If your project's risk profile
 is different, auto-resume is a reasonable next step — just make it a
 deliberate choice, not a default a hook backs into.
 
+### 8. Pre-PR test gate (`pr-gate.sh` + `preflight.sh`)
+
+The same per-SHA-evidence design as the merge gate, moved one step earlier
+in the pipeline: `gh pr create` is denied unless
+`.claude/test-evidence/<HEAD sha>` exists, and the only writer of that file
+is `preflight.sh` finishing green. A new commit changes the SHA, so stale
+evidence can never cover a newer diff — invalidation comes free from the
+naming, exactly like per-SHA review approvals.
+
+Two decisions worth copying:
+
+- **The hook checks; the script runs.** Never run test suites inside a
+  hook — hooks have short timeouts and no TTY, and a suite can take
+  minutes. Splitting checker from writer also gives the rule its shape:
+  the gate is cheap and always on, the expensive part runs exactly once,
+  when it matters.
+- **Path-gate the preflight or it will be bypassed.** The realistic
+  failure mode of "run everything before every PR" is not disobedience,
+  it's cost: a full suite on a docs-only change trains everyone to reach
+  for the escape hatch. Matching each suite against the merge-base diff
+  (frontend globs → unit + e2e, backend globs → backend suite; a docs-only
+  diff runs nothing and still records evidence) keeps the wall cheap
+  enough that going around it is never worth it. During development you
+  run targeted tests; the full relevant suites run once, right before
+  the PR.
+
+The companion policy that makes this more than bookkeeping: if the
+preflight surfaces broken tests **unrelated** to your change, fix them
+anyway (in their own commit, so the reviewer can trace them). Red suites
+rot fastest when everyone scopes pre-existing breakage out of their own
+PR — that is precisely how a test suite accumulates dozens of silent
+failures while CI stays green.
+
 ## Testing a hook without triggering it
 
 Feed it fake stdin:
