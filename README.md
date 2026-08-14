@@ -17,20 +17,26 @@ One human owner sets objectives and holds the keys to anything involving money, 
 ```mermaid
 flowchart TB
     Owner["Owner (human)<br/>objectives · money · risk"]
+    Goal["Goal + acceptance criteria<br/>checklist written before any code"]
     Main["Main session (Claude) — the orchestrator<br/>gather context → act → verify → repeat"]
     Explore["Explore / research agents<br/>parallel fan-out"]
-    Planner["Planner (Opus)<br/>designs the approach"]
-    Executor["Executor (Sonnet)<br/>implements mechanically"]
+    Planner["Planner (Opus)<br/>designs the approach · ADR before backend code"]
+    Executor["Executor (Sonnet)<br/>implements mechanically<br/>UI work: screenshot of the running view"]
     Guardian["Guardian<br/>lint · types · build · tests"]
+    Review["Review loop (max 3 rounds)<br/>QA agent + product agent, in parallel<br/>PASS / CHANGES_REQUIRED"]
     Verify["Independent verification<br/>Codex (different vendor) reviews the exact PR diff<br/>SHIP / BLOCK — enforced by a per-commit-SHA hook"]
     Merge["merge to dev → CI deploys → verified green"]
 
-    Owner -->|objective| Main
+    Owner -->|objective| Goal
+    Goal --> Main
     Main --> Explore
     Main --> Planner
     Planner --> Executor
     Executor --> Guardian
-    Guardian --> Verify
+    Guardian --> Review
+    Review -->|PASS from both| Verify
+    Review -.->|"CHANGES_REQUIRED: fix, next round"| Executor
+    Review -.->|"still failing after round 3: escalate"| Owner
     Verify -->|SHIP| Merge
     Verify -.->|BLOCK: fix and re-review| Executor
     Merge -.->|"promotion toward production: human OK, every time"| Owner
@@ -47,12 +53,14 @@ Three layers keep this safe:
 A typical non-trivial change flows like this:
 
 1. The owner states an objective ("customers need X"). Ambiguity about the *goal* triggers one clarifying round; ambiguity about the *how* does not — technical calls belong to the AI.
-2. The main session checks whether a **skill** covers the domain (migrations, webhooks, provider features…) and loads it before touching code, then fans out **explore agents** to map the relevant code in parallel.
-3. A **planner agent** on the strongest model designs the approach; **executor agents** on a cheaper model implement it, in parallel where file ownership is disjoint.
-4. A **guardian agent** validates lint, types, build, and tests after every meaningful batch of edits.
-5. Verification is against the *actual job*, not proxies: a test that goes red→green, a call against the deployed function, a screenshot of the UI doing the thing. "Should work" is banned vocabulary.
-6. A PR opens. In parallel with CI, **Codex — a different model vendor — reviews the exact diff** with a skeptical SHIP/BLOCK prompt. A merge-gate hook physically blocks the merge until a SHIP verdict is recorded for the PR's exact head commit; any new commit invalidates it.
-7. Merge to the development branch *is* the deploy (CI/CD). The session reports back with evidence and stops at the hard stop: promoting toward customer-facing environments requires an explicit human OK, every time.
+2. The session writes the goal and its **acceptance criteria as a checklist** to `reviews/<feature>-goal.md` before touching code. Nothing downstream can declare done while a box is unchecked — this is the loop's success condition, not a formality. The loop can still *end* with boxes unchecked, but only by escalating to the owner, which is a failure exit rather than completion.
+3. The main session checks whether a **skill** covers the domain (migrations, webhooks, provider features…) and loads it before touching code, then fans out **explore agents** to map the relevant code in parallel. Domain gates apply here: UI work loads the design and component-library skills and builds on existing primitives rather than hand-rolling; service, schema, and API work loads the backend and architecture skills and records the architecture decision in a **short ADR before implementation**.
+4. A **planner agent** on the strongest model designs the approach; **executor agents** on a cheaper model implement it, in parallel where file ownership is disjoint.
+5. A **guardian agent** validates lint, types, build, and tests after every meaningful batch of edits.
+6. Verification is against the *actual job*, not proxies: a test that goes red→green, a call against the deployed function, a screenshot of the UI doing the thing. "Should work" is banned vocabulary, and UI work is never reported done without a screenshot of the running view.
+7. A **review loop** runs before the PR — bounded at three rounds. Each round spawns two reviewers in parallel: a **QA agent** (correctness, edge cases, error states, accessibility) and a **product agent** (does this meet the acceptance criteria, is the flow usable). Where that expertise lives in skills rather than dedicated agent types, the rule names the skills each agent loads — naming a non-existent agent type produces a gate nobody can execute. Each writes its own report — `reviews/<feature>-round-N-qa.md` and `reviews/<feature>-round-N-product.md`, never a shared path, since two parallel writers would overwrite each other's verdict — with a verdict of `PASS` or `CHANGES_REQUIRED` and a numbered list of blocking issues. Any `CHANGES_REQUIRED` in round 1 or 2 sends the work back for a fix and another round; in round 3 there is no next round. The loop exits on `PASS` from both, or escalates to the owner with the open issues if round three still fails.
+8. A PR opens. In parallel with CI, **Codex — a different model vendor — reviews the exact diff** with a skeptical SHIP/BLOCK prompt. A merge-gate hook physically blocks the merge until a SHIP verdict is recorded for the PR's exact head commit; any new commit invalidates it.
+9. Merge to the development branch *is* the deploy (CI/CD). The session reports back with evidence and stops at the hard stop: promoting toward customer-facing environments requires an explicit human OK, every time.
 
 Total human involvement: the objective at the start, the promotion decision at the end, and any genuine business/risk calls in between.
 
