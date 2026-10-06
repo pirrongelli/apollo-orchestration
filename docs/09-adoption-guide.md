@@ -12,7 +12,7 @@ The order is deliberate. Norms before structure, walls before autonomy, verifica
 |---|---|---|---|
 | 1 | The constitution (CLAUDE.md) | `examples/claude-md/` | A contract: hard stops, a conjunctive done checklist, decision ownership |
 | 2 | Guardrail hooks | `examples/hooks/` | Deterministic walls: protected branches and operations the AI cannot cross |
-| 3 | Cross-vendor merge gate | `examples/hooks/` + a second-vendor CLI | An independent SHIP/BLOCK verdict on every diff, enforced per commit SHA |
+| 3 | Project-specific structured review admission | Apollo 2.0 + `examples/fleet/` | Exact-head/base original reviews and a tested forge adapter (not shipped here) |
 | 4 | Agents (guardian first) | `examples/agents/` | Breakage caught within one edit cycle instead of at commit time |
 | 5 | Your first skill | `examples/skills/` | Your last incident encoded as a playbook that fires before the domain work |
 | 6 | Memory + index | `examples/memory/` | The incident → memory → rule → hook pipeline; sessions that compound |
@@ -48,7 +48,15 @@ Then do the step almost everyone skips: **test each hook by asking the AI to vio
 
 After Day 2 you can safely say "finish the job without asking me" — because the actions that must never happen autonomously now *cannot* happen autonomously.
 
-## Day 3 — The verification gate
+## Day 3 — The verification gate (historical, non-runnable)
+
+The remaining Day 3 steps describe the superseded marker-only flow; do not
+install or run them. Its approval writer and merge gate are retired refusals.
+Current adoption requires a project-specific forge adapter that authenticates
+original exact-head/base independent reviews, observes current required CI,
+pins the reviewed head and retains the real merge receipt. Adversarially test
+that adapter before using it. The [local reference](../examples/fleet/README.md)
+validates attestations only; this repository ships no live admission adapter.
 
 Now install cross-vendor review: the merge gate and record-approval flow from Chapter 2, using the hook and scripts in `examples/hooks/`.
 
