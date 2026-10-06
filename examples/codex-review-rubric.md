@@ -1,33 +1,31 @@
 # Codex Review Rubric (SHIP/BLOCK)
 
-A generic, rules-based rubric for the cross-vendor merge gate described in
+An informative behavioral rubric from the historical review approach described in
 [`docs/02-multi-llm-verification.md`](../docs/02-multi-llm-verification.md).
 It replaces an open-ended "any thoughts?" review prompt with a fixed list of
 numbered rules and a mandatory verdict grammar, so every verdict is auditable
 against a specific rule rather than a vibe.
 
-**How to invoke it:**
+**Apollo 2.0 use:** choose a project-admitted independent context, preserve
+its configured model and normal approvals. Before review, assess and adapt each
+historical numbered rule to the project's stack and change scope; provide the
+applicability decisions, reasons and required gates. Inapplicable requirements
+(for example, R3 for a project without database tables) cannot cause a BLOCK;
+applicable safety and verification requirements remain mandatory. Provide the
+adapted rubric plus the
+exact frozen head/base, scoped source and original gate receipts. No particular
+vendor is mandatory. Do not send another reviewer's verdict as input. Retain
+actual original completed output and truthful unavailable metadata. Runtime
+adapter compatibility must be established separately.
 
-```bash
-gh pr diff <n> | codex exec --sandbox read-only \
-  "Review against every rule in codex-review-rubric.md. Diff follows on stdin."
-```
-
-**Large-diff caveat:** piping a big diff through stdin can overflow the CLI's
-~1MB stdin limit and the command will silently fail or truncate. If the piped
-invocation fails, drop the pipe and have Codex pull the diff itself inside its
-own sandbox instead of relying on stdin:
-
-```bash
-codex exec --sandbox read-only --cd "<repo-or-worktree>" \
-  "Run 'gh pr diff <n>' (or 'git diff <base>...<head>') yourself, then review
-   the result against every rule in codex-review-rubric.md."
-```
+Use the [structured report contract](fleet/README.md): standalone HEAD_SHA,
+BASE_SHA, VERDICT, RULES_FAILED and GATES lines. Notes follow those lines.
+Marker files and success-process exits are not approval.
 
 ---
 
 Review the diff against each numbered rule below. Verdict format is
-mandatory: `VERDICT: SHIP` or `VERDICT: BLOCK`, then `RULES FAILED:` listing
+mandatory: `VERDICT: SHIP` or `VERDICT: BLOCK`, then `RULES_FAILED:` listing
 each failed rule number with a one-line reason and a `file:line` reference.
 If no rule fails but you have non-blocking observations, list them under
 `NOTES:` — notes never block a SHIP verdict.

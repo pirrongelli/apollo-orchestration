@@ -1,5 +1,7 @@
 # Multi-LLM Verification: The Doer Never Judges Its Own Work
 
+> **Historical case study — informative.** [Apollo 2.0](12-apollo-2-standard.md) supersedes marker-only approvals, mandatory vendor/model choices and automatic promotion of lessons. The historical mechanisms below do not establish conformance or live operation of the new standard.
+
 Every pull request on our platform — a regulated Banking-as-a-Service platform run by a solo founder and an AI engineering team — must pass an independent review by a *different model vendor* before it can merge. The reviewer is OpenAI Codex (GPT via the Codex CLI); the author is Claude. The verdict is enforced by a deterministic hook, not by anyone's good intentions.
 
 This chapter explains the rule, the enforcement mechanism, why cross-vendor matters, and how the same principle shows up inside our engineering loops as a dedicated verifier agent.

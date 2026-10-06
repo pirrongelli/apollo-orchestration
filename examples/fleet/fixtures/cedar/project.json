@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "project_id": "cedar",
+  "repository": "sample/cedar",
+  "base_branch": "integration",
+  "sensitive_paths": [
+    "controls/"
+  ],
+  "required_gates": [
+    "unit",
+    "build"
+  ],
+  "required_effects": [
+    "ci",
+    "merge",
+    "deployment",
+    "work_item",
+    "cleanup",
+    "notice"
+  ]
+}

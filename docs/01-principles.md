@@ -1,5 +1,7 @@
 # Chapter 1 — Principles: The Agentic Loop Contract
 
+> **Historical case study — informative.** [Apollo 2.0](12-apollo-2-standard.md) supersedes marker-only approvals, mandatory vendor/model choices and automatic promotion of lessons. The historical mechanisms below do not establish conformance or live operation of the new standard.
+
 Everything in this methodology sits on one operating contract between a solo founder and an AI engineering team building a regulated Banking-as-a-Service platform. The contract says: given a clear objective, the AI runs autonomously — gather context, act, verify, repeat — until the work is merged and verified green, then stops and reports with evidence. This chapter defines that contract precisely, because every failure mode we have hit traces back to one of its clauses being fuzzy.
 
 ## Why a contract at all

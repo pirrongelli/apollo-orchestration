@@ -1,5 +1,7 @@
 # Memory System Templates
 
+> **Version 2.0 precedence:** [Apollo 2.0](../../docs/12-apollo-2-standard.md) governs bounded ownership, independent review and reviewed learning. Historical model pins, vendor choices and automatic lesson promotion below are illustrative, not mandatory or approved configuration changes.
+
 This directory contains directly usable templates for the persistent memory system described in [docs/06-memory.md](../../docs/06-memory.md). Copy them into your AI's per-project memory directory (e.g. `~/.claude/projects/<project>/memory/`) and replace the invented content with your own facts.
 
 ## The architecture in one paragraph

@@ -1,5 +1,7 @@
 # Chapter 9 — Adoption Guide: This Methodology in a Week
 
+> **Historical case study — informative.** [Apollo 2.0](12-apollo-2-standard.md) supersedes marker-only approvals, mandatory vendor/model choices and automatic promotion of lessons. The historical mechanisms below do not establish conformance or live operation of the new standard.
+
 The previous chapters describe a system that grew over months of production incidents. You do not need months to adopt it — you need a week, taken in the right order. This chapter lays out a staged path where each day's work is independently valuable: stop after Day 2 and you still have something worth having.
 
 The order is deliberate. Norms before structure, walls before autonomy, verification before trust. Do not skip ahead to agents and loops before the constitution and the hooks exist — an autonomous AI without walls is exactly the thing this methodology exists to prevent.
@@ -10,7 +12,7 @@ The order is deliberate. Norms before structure, walls before autonomy, verifica
 |---|---|---|---|
 | 1 | The constitution (CLAUDE.md) | `examples/claude-md/` | A contract: hard stops, a conjunctive done checklist, decision ownership |
 | 2 | Guardrail hooks | `examples/hooks/` | Deterministic walls: protected branches and operations the AI cannot cross |
-| 3 | Cross-vendor merge gate | `examples/hooks/` + a second-vendor CLI | An independent SHIP/BLOCK verdict on every diff, enforced per commit SHA |
+| 3 | Project-specific structured review admission | Apollo 2.0 + `examples/fleet/` | Exact-head/base original reviews and a tested forge adapter (not shipped here) |
 | 4 | Agents (guardian first) | `examples/agents/` | Breakage caught within one edit cycle instead of at commit time |
 | 5 | Your first skill | `examples/skills/` | Your last incident encoded as a playbook that fires before the domain work |
 | 6 | Memory + index | `examples/memory/` | The incident → memory → rule → hook pipeline; sessions that compound |
@@ -46,26 +48,20 @@ Then do the step almost everyone skips: **test each hook by asking the AI to vio
 
 After Day 2 you can safely say "finish the job without asking me" — because the actions that must never happen autonomously now *cannot* happen autonomously.
 
-## Day 3 — The verification gate
+## Day 3 — Structured review admission
 
-Now install cross-vendor review: the merge gate and record-approval flow from Chapter 2, using the hook and scripts in `examples/hooks/`.
+Follow [Apollo 2.0](12-apollo-2-standard.md), especially A2-08 through A2-10.
+Admission requires original independent reviews for the exact head and diff
+base, exclusion of every author, and the reviewer count required by the
+project's sensitivity policy. A different vendor is optional unless the project
+explicitly requires it; a marker file does not establish approval.
 
-Prerequisites: a second-vendor CLI. If your primary agent is Claude, the OpenAI Codex CLI is the natural counterpart — any model runner from a *different* family works, but same-family review is a correlated channel and buys much less. Give it read-only sandbox access to the repo.
-
-The flow to wire up:
-
-1. When a PR opens, feed the reviewer the **exact diff** — never a summary — with a skeptical prompt that demands a binary SHIP/BLOCK verdict.
-2. On SHIP, record an approval file keyed to the PR's **head commit SHA** (not the PR number, not the branch — those survive new commits; SHAs do not).
-3. The PreToolUse hook denies any merge command unless the approval file for the current head SHA exists.
-
-Start **advisory**: run the review on every PR, read the verdicts, but leave the hook uninstalled for the first several PRs. This builds calibration — you learn what your second vendor is good at catching and how often it BLOCKs — without gating your workflow on a prompt you haven't tuned yet. Once the verdicts have earned your trust (for us that took under a week), flip to hook-enforced and never look back. Run the review in parallel with CI so the enforced gate costs no wall-clock time.
-
-Two tuning notes from experience:
-
-- **Aim the prompt at your doer's known weaknesses.** A generic "review this" produces polite nitpicks. "Assume this diff contains a bug; look especially at concurrency, idempotency, and auth boundaries" produces findings.
-- **Relay verdicts verbatim.** An orchestrating agent summarizing a harsh review will round it toward politeness. The raw text is the signal.
-
-**Verify Day 3 worked:** with the hook installed, attempt a merge on a PR with no recorded approval and watch the denial name the missing SHA. Then record the approval and watch the same command pass.
+A project-specific forge adapter must authenticate those records, observe
+current required CI, pin the reviewed head and retain the real merge receipt.
+Test its refusal paths before using it. This repository ships no live admission
+adapter: the [local reference](../examples/fleet/README.md) validates supplied
+attestations only. The historical approval writer and merge gate are retired
+refusal stubs, not installation or admission steps.
 
 ## Day 4 — Agents
 

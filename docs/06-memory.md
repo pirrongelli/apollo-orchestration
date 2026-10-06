@@ -1,5 +1,7 @@
 # Persistent Memory: How an AI Team Remembers
 
+> **Historical case study — informative.** [Apollo 2.0](12-apollo-2-standard.md) supersedes marker-only approvals, mandatory vendor/model choices and automatic promotion of lessons. The historical mechanisms below do not establish conformance or live operation of the new standard.
+
 Every Claude Code session starts with a blank context window. Without a deliberate memory system, the AI re-learns the same vendor API quirks, re-makes mistakes it already made and fixed, and re-asks questions the human answered weeks ago. This chapter describes the memory architecture we built for developing a regulated Banking-as-a-Service platform — the layer that turns a stateless model into a team member with institutional knowledge.
 
 ## The problem: amnesia is expensive

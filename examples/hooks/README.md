@@ -1,19 +1,24 @@
-# Guardrail Hooks — copy-pasteable examples
+# Historical guardrail examples
 
-Genericized versions of the PreToolUse guardrails we run in production on a
-regulated Banking-as-a-Service platform. They are the deterministic layer
-described in [docs/05-hooks-guardrails.md](../../docs/05-hooks-guardrails.md):
-prompts and CLAUDE.md rules are advice the model can forget under pressure;
-hooks are shell code the harness always executes.
+**Apollo 2.0 notice:** marker-only approval is nonconforming. The old writer is
+retired (exit 2, no writes), and the old merge-gate entry point is a refusal
+placeholder. Do not install either as an approval mechanism. The settings
+fragment omits the marker check and consequently supplies **no review admission
+control**. See [the structured contract](../fleet/README.md) and
+[the normative standard](../../docs/12-apollo-2-standard.md) for integration
+requirements and limits. Local hooks cannot enforce actions outside their harness.
+
+The descriptions below are historical explanations, not current installation
+instructions for merge admission. Claims of different-vendor necessity,
+production-grade marker admission, or impossibility of stale approval reuse
+are superseded. Other examples need project-specific adaptation and testing.
 
 ## Files
 
 - `settings.hooks.json` — a valid `"hooks"` fragment for `.claude/settings.json`
-- `record-approval.sh` — helper that records an independent-review approval
-  for the merge gate
-- `merge-gate.sh` — standalone, hardened version of the merge gate: broad
-  bypass-resistant detection, a canonical command form, and fail-closed
-  checks throughout
+- `record-approval.sh` — retired refusal stub: no marker writes, exit 2
+- `merge-gate.sh` — retired deny placeholder, exit 2; do not install it as
+  review admission
 - `session-status.sh` — a SessionStart hook that surfaces in-flight loops
   and plans so a restarted session has initiative, not just state
 
@@ -105,54 +110,31 @@ uses `supabase/.temp/`; add your own — `.terraform/`, `.vercel/`, etc.).
 These dirs are tool-managed and gitignored; agent edits there get clobbered
 or accidentally committed. Cheap hook, eliminates a whole class of noise.
 
-### 5. Cross-vendor merge gate (`Bash`)
+### 5. Retired marker-only review flow (historical)
 
-The keystone: **the doer never judges its own work.** `gh pr merge` is
-denied unless an approval file named for the PR's **exact head SHA** exists
-under `.claude/reviews/`. The workflow:
+The historical flow treated a per-head marker as independent approval. That
+flow is superseded: `record-approval.sh` records nothing and refuses with exit 2.
+A marker's existence cannot prove an independent review, original report,
+exact diff base or current gate results. A second vendor is optional project
+policy; independent contexts and author exclusions remain required.
 
-1. PR ready → an independent reviewer (a *different model vendor* than the
-   author) reviews the exact diff with a skeptical SHIP/BLOCK prompt.
-2. On SHIP → `./record-approval.sh <pr-number>` resolves the head SHA via
-   `gh pr view --json headRefOid` and writes `.claude/reviews/<sha>`.
-3. `gh pr merge` now passes the hook.
-4. Any new commit changes the head SHA → the approval no longer matches →
-   merge blocked again until the new diff is re-reviewed. Approvals are
-   per-diff, never per-PR.
+Current adoption needs protected structured records and original exact-head/base
+reports, required reviewer counts and authentic applicable gate receipts. See
+[the local contract](../fleet/README.md) for its tested predicates and limits.
+Do not run the retired writer to authorize a merge.
 
-Keying on the immutable SHA is what makes this a gate rather than a ritual:
-there is no way to reuse an approval for code it did not cover. Run the
-independent review in parallel with CI so it costs no wall-clock time.
+### 6. Retired standalone entry point (`merge-gate.sh`)
 
-### 6. Standalone merge gate (`merge-gate.sh`)
+This file is a refusal placeholder, not the historical command parser or an
+installable admission integration. It emits a fixed deny response when output
+can be written and exits 2, including failed writes and closed-reader pipes.
+An arbitrary marker never unblocks it. The settings fragment supplies no review
+admission control; do not wire this stub in expecting approved merges to pass.
 
-The one-liner in `settings.hooks.json` above covers the common case. The
-standalone `merge-gate.sh` is the hardened version we actually run, written
-up in [docs/02-multi-llm-verification.md](../../docs/02-multi-llm-verification.md).
-Wire it in as the `command` for the `Bash` matcher in place of the inline
-one-liner (point `settings.json` at the script's path instead of embedding
-the logic).
-
-Two lessons shaped it, both from independent review finding gaps the
-one-liner missed:
-
-- **Detection has to be broad; the accepted command has to be narrow.**
-  A regex cannot enumerate every way a shell can spell `gh pr merge` —
-  quoted binaries, command substitution, intra-word quoting that reassembles
-  at exec time. So the script normalises the command two different ways to
-  *find* a merge attempt broadly, then requires the command to match one
-  narrow canonical shape to *pass*. Everything in between — chaining,
-  piping, `--repo`/`-R`/`--hostname` selectors, multiline commands that
-  present an approved merge on line one and a different merge on line two —
-  is denied, never waved through. The one accepted cost is a false positive:
-  `echo "gh pr merge 1"` also gets denied. That is the safe direction.
-- **A rule that claims enforcement it doesn't have is worse than an admitted
-  convention.** Our own project instructions said the merge gate was
-  "enforced by a hook" before this script existed — independent review is
-  what caught that the hook did not exist yet. We fixed the documentation
-  first (so nothing kept relying on a control that wasn't real), then built
-  the hook. If you adopt this pattern, check that every "enforced by X" claim
-  in your own instructions file has an X you can point to.
+A real integrator must authenticate protected records and original reports,
+observe current repository/head/base and required CI, pin the reviewed head,
+and retain the actual merge receipt. Adversarially test that project-specific
+forge adapter before use. This repository does not ship such a live adapter.
 
 ### 7. Session-start awareness (`session-status.sh`)
 

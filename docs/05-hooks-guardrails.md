@@ -1,5 +1,7 @@
 # Chapter 05 — Hooks as Deterministic Guardrails
 
+> **Historical case study — informative.** [Apollo 2.0](12-apollo-2-standard.md) supersedes marker-only approvals, mandatory vendor/model choices and automatic promotion of lessons. The historical mechanisms below do not establish conformance or live operation of the new standard.
+
 Instructions in a prompt are probabilistic; hooks are deterministic. This chapter documents how we turned every "the AI must never do X" rule for a regulated Banking-as-a-Service platform into a PreToolUse hook that denies the tool call in code — with a reason the model can read, learn from, and route around correctly. If a policy matters enough that violating it once is unacceptable, it does not live in a prompt.
 
 ## The core idea: prompts drift, code doesn't
