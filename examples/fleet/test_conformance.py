@@ -372,6 +372,36 @@ class Conformance(unittest.TestCase):
             self.assertEqual(result.returncode, 2)
             self.assertEqual(output.read_bytes(), b'')
 
+    def test_both_retired_hooks_refuse_closed_reader_pipes(self):
+        import os
+        for script, channel in (('merge-gate.sh', 'stdout'), ('record-approval.sh', 'stderr')):
+            with self.subTest(script=script):
+                reader, writer = os.pipe()
+                os.close(reader)
+                try:
+                    streams = {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE, channel: writer}
+                    result = subprocess.run(['/bin/bash', str(ROOT.parent / 'hooks' / script)],
+                        restore_signals=True, timeout=5, **streams)
+                    self.assertEqual(result.returncode, 2)
+                finally:
+                    os.close(writer)
+
+    def test_both_retired_hooks_refuse_with_exit_function_shadow(self):
+        import os
+        with tempfile.TemporaryDirectory() as tmp:
+            environment = Path(tmp) / 'owned-bash-env'
+            environment.write_text('exit() { return 0; }\n')
+            for script in ('merge-gate.sh', 'record-approval.sh'):
+                with self.subTest(script=script):
+                    result = subprocess.run(['/bin/bash', str(ROOT.parent / 'hooks' / script)],
+                        env={**os.environ, 'BASH_ENV': str(environment)},
+                        capture_output=True, text=True, timeout=5)
+                    self.assertEqual(result.returncode, 2)
+                    if script == 'merge-gate.sh':
+                        self.assertEqual(json.loads(result.stdout)['hookSpecificOutput']['permissionDecision'], 'deny')
+                    else:
+                        self.assertIn('Retired', result.stderr)
+
 
 if __name__ == '__main__':
     unittest.main()
