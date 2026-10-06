@@ -81,8 +81,8 @@ location. Budget under an hour — if a placeholder takes longer, delete the sec
 until you need it.
 
 **Keep as-is** (these generalize to any serious project):
-- RULE #1 (independent cross-vendor verification before merge) — swap in whatever
-  second model/CLI you use as the reviewer.
+- RULE #1 (independent contexts before merge) — preserve author exclusions and
+  exact-head/base evidence; apply any vendor requirement declared by your project.
 - The Operating Mode: the loop contract, done-checklist, decide-vs-ask split, circuit breaker.
 - Verification discipline, testing mindset, PR discipline, context management.
 
