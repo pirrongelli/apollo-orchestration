@@ -9,6 +9,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 from pathlib import Path, PurePosixPath
 import re
 
@@ -80,10 +81,17 @@ def reject_constant(value):
     raise ValueError('non-finite JSON number: ' + value)
 
 
+def finite_float(value):
+    number = float(value)
+    require(math.isfinite(number), 'non-finite JSON number: ' + value)
+    return number
+
+
 def parse(raw):
     require(isinstance(raw, bytes) and 0 < len(raw) <= MAX_INPUT_BYTES, 'input byte limit exceeded')
     try:
-        return json.loads(raw.decode('utf-8'), object_pairs_hook=unique_keys, parse_constant=reject_constant)
+        return json.loads(raw.decode('utf-8'), object_pairs_hook=unique_keys,
+                          parse_constant=reject_constant, parse_float=finite_float)
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError('invalid UTF-8 JSON') from exc
 

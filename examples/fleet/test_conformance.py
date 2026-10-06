@@ -71,6 +71,15 @@ class Conformance(unittest.TestCase):
         self.evidence['completion']['effects'].append(effect)
         self.assertEqual(self.run_contract(), 'COMPLETE: local contract satisfied')
 
+    def test_json_numeric_overflow_is_refused(self):
+        for number in (b'1e9999', b'-1e9999'):
+            with self.subTest(number=number), self.assertRaises(ValueError):
+                validator.parse(b'{"observation":' + number + b'}')
+
+    def test_finite_json_floats_remain_valid(self):
+        self.assertEqual(validator.parse(b'{"observations":[1.5,-2e3,1e-3]}'),
+                         {'observations': [1.5, -2000.0, 0.001]})
+
     def test_stale_head(self): self.refused(head='9' * 40)
     def test_stale_base(self): self.refused(base='9' * 40)
     def test_changed_project(self):
