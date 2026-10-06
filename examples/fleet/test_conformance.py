@@ -296,9 +296,35 @@ class Conformance(unittest.TestCase):
             result = subprocess.run(['bash', str(ROOT.parent / 'hooks' / 'merge-gate.sh')],
                 input=json.dumps({'tool_input': {'command': 'gh pr merge 1 --squash'}}),
                 cwd=directory, env=environment, text=True, capture_output=True, timeout=5)
-            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.returncode, 2)
             response = json.loads(result.stdout)
             self.assertEqual(response['hookSpecificOutput']['permissionDecision'], 'deny')
+
+    def test_retired_gate_denies_without_working_python(self):
+        import os
+        for interpreter in ('absent', 'failing'):
+            with self.subTest(interpreter=interpreter), tempfile.TemporaryDirectory() as tmp:
+                directory = Path(tmp)
+                if interpreter == 'failing':
+                    executable = directory / 'python3'
+                    executable.write_text('#!/bin/sh\nexit 37\n')
+                    executable.chmod(0o700)
+                result = subprocess.run(['/bin/bash', str(ROOT.parent / 'hooks' / 'merge-gate.sh')],
+                    env={**os.environ, 'PATH': str(directory)},
+                    capture_output=True, text=True, timeout=5)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                response = json.loads(result.stdout)
+                self.assertEqual(response['hookSpecificOutput']['permissionDecision'], 'deny')
+
+    def test_retired_gate_fails_closed_when_output_cannot_be_written(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'read-only-descriptor'
+            output.write_bytes(b'')
+            with output.open('rb') as stream:
+                result = subprocess.run(['/bin/bash', str(ROOT.parent / 'hooks' / 'merge-gate.sh')],
+                    stdout=stream, stderr=subprocess.PIPE, text=True, timeout=5)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(output.read_bytes(), b'')
 
 
 if __name__ == '__main__':
