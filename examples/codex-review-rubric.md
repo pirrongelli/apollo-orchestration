@@ -7,7 +7,12 @@ numbered rules and a mandatory verdict grammar, so every verdict is auditable
 against a specific rule rather than a vibe.
 
 **Apollo 2.0 use:** choose a project-admitted independent context, preserve
-its configured model and normal approvals, and provide this rubric plus the
+its configured model and normal approvals. Before review, assess and adapt each
+historical numbered rule to the project's stack and change scope; provide the
+applicability decisions, reasons and required gates. Inapplicable requirements
+(for example, R3 for a project without database tables) cannot cause a BLOCK;
+applicable safety and verification requirements remain mandatory. Provide the
+adapted rubric plus the
 exact frozen head/base, scoped source and original gate receipts. No particular
 vendor is mandatory. Do not send another reviewer's verdict as input. Retain
 actual original completed output and truthful unavailable metadata. Runtime
