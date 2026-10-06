@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "project_id": "harbor",
+  "repository": "sample/harbor",
+  "base_branch": "develop",
+  "task_id": "harbor-sample-task",
+  "head_sha": "2222222222222222222222222222222222222222",
+  "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "allowed_paths": [
+    "controls/example.py"
+  ],
+  "risk": "sensitive",
+  "coordinator_context": "harbor-coordinator",
+  "implementation_contexts": [
+    "harbor-author"
+  ],
+  "authorization": {
+    "actor": "synthetic-owner",
+    "receipt_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "effects": [
+      "source-change",
+      "review",
+      "ci",
+      "merge",
+      "deployment",
+      "work_item",
+      "cleanup",
+      "notice"
+    ]
+  },
+  "started_at": "2026-01-01T00:00:00+00:00",
+  "cutoff_at": "2026-01-01T00:10:00+00:00",
+  "limits": {
+    "max_attempts": 3,
+    "verification_reserve": 1,
+    "max_seconds": 600,
+    "max_output_bytes": 64000,
+    "max_resources": 2,
+    "max_disk_bytes": 1000000
+  }
+}

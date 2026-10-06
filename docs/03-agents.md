@@ -1,5 +1,7 @@
 # The Agent Roster: How Work Fans Out
 
+> **Historical case study — informative.** [Apollo 2.0](12-apollo-2-standard.md) supersedes marker-only approvals, mandatory vendor/model choices and automatic promotion of lessons. The historical mechanisms below do not establish conformance or live operation of the new standard.
+
 This chapter documents the specialized agents we run on top of Claude Code to build a regulated Banking-as-a-Service platform as a solo founder plus AI team. The core idea is simple: the main conversation is an orchestrator, not a worker. Everything that can run in parallel — exploration, planning, execution, validation, review — runs in a subagent with its own fresh context, and the main thread keeps only the conclusions.
 
 ## The Philosophy: Speed Comes From Parallelism

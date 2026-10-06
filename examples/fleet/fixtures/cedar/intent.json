@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "project_id": "cedar",
+  "repository": "sample/cedar",
+  "base_branch": "integration",
+  "task_id": "cedar-sample-task",
+  "head_sha": "1111111111111111111111111111111111111111",
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "allowed_paths": [
+    "controls/example.py"
+  ],
+  "risk": "sensitive",
+  "coordinator_context": "cedar-coordinator",
+  "implementation_contexts": [
+    "cedar-author"
+  ],
+  "authorization": {
+    "actor": "synthetic-owner",
+    "receipt_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "effects": [
+      "source-change",
+      "review",
+      "ci",
+      "merge",
+      "deployment",
+      "work_item",
+      "cleanup",
+      "notice"
+    ]
+  },
+  "started_at": "2026-01-01T00:00:00+00:00",
+  "cutoff_at": "2026-01-01T00:10:00+00:00",
+  "limits": {
+    "max_attempts": 3,
+    "verification_reserve": 1,
+    "max_seconds": 600,
+    "max_output_bytes": 64000,
+    "max_resources": 2,
+    "max_disk_bytes": 1000000
+  }
+}

@@ -1,5 +1,7 @@
 # CLAUDE.md — the project constitution
 
+> **Version 2.0 precedence:** [Apollo 2.0](../../docs/12-apollo-2-standard.md) governs bounded ownership, independent review and reviewed learning. Historical model pins, vendor choices and automatic lesson promotion below are illustrative, not mandatory or approved configuration changes.
+
 This directory contains an adoptable template for a `CLAUDE.md` file, distilled from the
 production constitution of a regulated Banking-as-a-Service platform built by a solo
 founder with a Claude Code agent team.

@@ -1,10 +1,17 @@
-# Guardrail Hooks — copy-pasteable examples
+# Historical guardrail examples
 
-Genericized versions of the PreToolUse guardrails we run in production on a
-regulated Banking-as-a-Service platform. They are the deterministic layer
-described in [docs/05-hooks-guardrails.md](../../docs/05-hooks-guardrails.md):
-prompts and CLAUDE.md rules are advice the model can forget under pressure;
-hooks are shell code the harness always executes.
+**Apollo 2.0 notice:** marker-only approval is nonconforming. The old writer is
+retired (exit 2, no writes), and the old merge-gate entry point is a refusal
+placeholder. Do not install either as an approval mechanism. The settings
+fragment omits the marker check and consequently supplies **no review admission
+control**. See [the structured contract](../fleet/README.md) and
+[the normative standard](../../docs/12-apollo-2-standard.md) for integration
+requirements and limits. Local hooks cannot enforce actions outside their harness.
+
+The descriptions below are historical explanations, not current installation
+instructions for merge admission. Claims of different-vendor necessity,
+production-grade marker admission, or impossibility of stale approval reuse
+are superseded. Other examples need project-specific adaptation and testing.
 
 ## Files
 

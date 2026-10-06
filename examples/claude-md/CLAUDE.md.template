@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+> Adaptable example. [Apollo 2.0](../../docs/12-apollo-2-standard.md) is normative; project-specific commands and promotion policies below require explicit declarations. Shared lessons remain proposed until independently reviewed.
+
 This file provides guidance to Claude Code when working with code in this repository.
 It is the project constitution: always loaded, always in force.
 
@@ -16,32 +18,23 @@ Key directories:
 - `{{BACKEND_DIR}}` — {{description}}
 - `{{SHARED_DIR}}` — {{description}}
 
-## RULE #1 — Orchestration + Independent Cross-Vendor Verification (non-negotiable)
+## RULE #1 — Bounded work and independent verification
 
-Every non-trivial change runs through the configured orchestration — this is the first
-rule and it overrides urgency, always:
-
-- **Fan out the configured agents by default**: exploration/domain agents for context
-  gathering, a validation agent after meaningful changes, skills before working in
-  their domain. Never grind through solo what the orchestration parallelizes.
-- **Independent verification before every merge**: the doer never judges its own work.
-  Before ANY merge (to {{DEV_BRANCH}}, {{STAGING_BRANCH}}, or {{PROD_BRANCH}}), run a
-  review of the exact PR diff by an **independent model from a different vendor**
-  (e.g. Codex reviewing Claude's work) with a skeptical SHIP/BLOCK prompt.
-- On a SHIP verdict, record it to `{{APPROVALS_DIR}}/<headRefOid>` — keyed to the PR's
-  exact head SHA. New commits on the PR invalidate the approval: re-review, re-record.
-- **Enforcement — confirm before you claim it**: if a pre-tool-use hook actually blocks
-  the merge command without the per-SHA approval file, say "enforced by hook" — it's
-  mechanical, not aspirational. If no such hook exists in this repo yet, don't write
-  that. Say **"convention-only — no automated gate yet"** instead. A false enforcement
-  claim trains the agent to trust a safety net that isn't there.
-- Run the independent review in parallel with CI so it costs no wall-clock time.
-- "Urgent production issue" is exactly when this matters most, not a reason to skip it.
-- **Hotfix promotion only — never full-branch promotion**: production fixes land on
-  {{DEV_BRANCH}} first, then go to {{STAGING_BRANCH}} and {{PROD_BRANCH}} as
-  cherry-picked `hotfix/*` branches carrying only the fix commits. Full-branch
-  promotion PRs are forbidden — they carry unreleased work into environments where it
-  hasn't been approved.
+- Declare immutable project/task scope, owners, authorization, attempts,
+  verification reserve, cutoff, output/disk/resource limits before effects.
+- Use one executor by default. Parallel work requires bounded capacity and
+  disjoint edit scopes; protect other owners' work and evidence.
+- Before any merge, obtain original exact-head/base reports from at least one
+  independent context for routine work or two for sensitive work. Exclude all
+  authors and the coordinator. A different vendor is optional project policy.
+- Preserve configured models and normal approvals; unsupported capability or
+  provider refusal is reported, never hidden by an automatic fallback.
+- Store structured evidence and original reports. File existence is insufficient.
+  Validate current head/base/CI immediately before a reviewed-head-pinned merge.
+- Claim automated enforcement only for tested controls actually installed. The
+  portable reference validates local records and is not a forge merge adapter.
+- Unknown effects require attributable inspection before replay. Retain failed
+  charges and expired limits; no restart refund or automatic new window.
 
 ## Operating Mode: The Agentic Loop
 
@@ -50,7 +43,7 @@ This is the default way I work. It overrides any instinct to stop early and ask.
 **The contract:** Given a clear objective, run the loop autonomously —
 *gather context → act → verify → repeat* — until the work is **merged to
 {{DEV_BRANCH}} and verified green**, then **stop and report**. Do not ask permission
-for the steps in between. The owner gives the objective; I deliver it tested.
+for the steps in between. The owner gives the objective; effects stay inside explicit authorization and finite limits.
 
 **Done means ALL of these — otherwise I am not done:**
 
@@ -59,11 +52,13 @@ for the steps in between. The owner gives the objective; I deliver it tested.
    request against the deployed service, a DB query, or a screenshot of the UI doing
    the thing. Never "should work."
 3. Committed on a feature branch, PR opened, merged to {{DEV_BRANCH}}, CI deploy green.
-4. Reported back with the evidence, ending with: "shipped to {{DEV_BRANCH}}, verified
+4. Authoritative work item reconciled; owned resources safely closed with commits,
+   uncommitted and ignored evidence preserved; foreign resources untouched.
+5. Declared completion notice actually received and evidence reported, ending with: "shipped to {{DEV_BRANCH}}, verified
    green — promote?"
 
 **Decide myself — STOP asking (this is the whole point):** library choices, file /
-component / module structure, naming, which files to touch, how to test, how to verify,
+component / module structure, naming, how to implement within the declared allowed paths, how to test, how to verify,
 lint fixes, refactors needed to land the work cleanly. Purely technical calls are mine
 to make. Make them and move on.
 

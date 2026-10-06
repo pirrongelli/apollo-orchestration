@@ -1,5 +1,7 @@
 # Engineering Loops
 
+> **Historical case study — informative.** [Apollo 2.0](12-apollo-2-standard.md) supersedes marker-only approvals, mandatory vendor/model choices and automatic promotion of lessons. The historical mechanisms below do not establish conformance or live operation of the new standard.
+
 Ad-hoc AI sessions are fine for a bug fix. They fall apart on campaigns — a coverage push across twenty modules, a migration that touches every policy, a backlog of audit findings. For that class of work we run *engineering loops*: structured discover→plan→execute→verify→iterate campaigns with measured baselines, model routing, an independent judge, and persistent memory between iterations. This chapter documents the loop system we use on a regulated Banking-as-a-Service platform.
 
 ## The problem loops solve

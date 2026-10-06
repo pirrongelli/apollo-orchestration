@@ -1,5 +1,7 @@
 # Example Agent Definitions
 
+> **Version 2.0 precedence:** [Apollo 2.0](../../docs/12-apollo-2-standard.md) governs bounded ownership, independent review and reviewed learning. Historical model pins, vendor choices and automatic lesson promotion below are illustrative, not mandatory or approved configuration changes.
+
 Genericized, copy-pasteable Claude Code agent definitions, derived from the real
 agents running in production on a regulated fintech platform. The
 platform-specific details have been stripped; the behavioral rules — which are

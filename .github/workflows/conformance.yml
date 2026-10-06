@@ -1,0 +1,37 @@
+name: Local conformance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  portable-examples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Inspect available runtimes
+        run: |
+          python3 --version
+          node --version
+          python3 -c 'import sys; assert sys.version_info >= (3, 10)'
+          node -e 'if (Number(process.versions.node.split(".")[0]) < 20) process.exit(1)'
+      - name: Synthetic local contracts
+        run: python3 -m unittest discover -s examples/fleet -p 'test_*.py' -v
+      - name: Existing portable Node examples
+        run: |
+          APOLLO_NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]')
+          if [ "$APOLLO_NODE_MAJOR" -ge 22 ]; then
+            export NODE_OPTIONS='--max-old-space-size=4096 --no-experimental-webstorage'
+          else
+            export NODE_OPTIONS='--max-old-space-size=4096'
+          fi
+          node --test examples/quality/ratchet-lib.test.mjs examples/loops/check-features-immutable.test.mjs

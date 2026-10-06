@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "fixture_only": true,
+  "project_id": "cedar",
+  "repository": "sample/cedar",
+  "task_id": "cedar-sample-task",
+  "head_sha": "1111111111111111111111111111111111111111",
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "intent_sha256": "5fd8ed840135e3caff7d112966347f3be8c514959fbf64c250a092cd628e11df",
+  "changed_paths": [
+    "controls/example.py"
+  ],
+  "reviews": [
+    {
+      "provider": "synthetic-provider",
+      "configured_model": "synthetic-model",
+      "observed_model": null,
+      "context": "cedar-reviewer-1",
+      "verdict": "SHIP",
+      "report": "HEAD_SHA: 1111111111111111111111111111111111111111\nBASE_SHA: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
+      "report_sha256": "a635b76b7a6f7a59d75d3a015ef1ef4602537306efcce40264412fb73ddd4bae"
+    },
+    {
+      "provider": "synthetic-provider",
+      "configured_model": "synthetic-model",
+      "observed_model": null,
+      "context": "cedar-reviewer-2",
+      "verdict": "SHIP",
+      "report": "HEAD_SHA: 1111111111111111111111111111111111111111\nBASE_SHA: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
+      "report_sha256": "a635b76b7a6f7a59d75d3a015ef1ef4602537306efcce40264412fb73ddd4bae"
+    }
+  ],
+  "gates": [
+    {
+      "name": "unit",
+      "status": "PASS",
+      "head_sha": "1111111111111111111111111111111111111111",
+      "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "executed": 1,
+      "skipped": 0,
+      "receipt_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    {
+      "name": "build",
+      "status": "PASS",
+      "head_sha": "1111111111111111111111111111111111111111",
+      "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "executed": 1,
+      "skipped": 0,
+      "receipt_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  ],
+  "completion": {
+    "status": "complete",
+    "finished_at": "2026-01-01T00:05:00+00:00",
+    "peak_resources": 2,
+    "peak_disk_bytes": 1000,
+    "attempts": [
+      {
+        "ordinal": 1,
+        "role": "work",
+        "charged_at": "2026-01-01T00:00:01+00:00",
+        "started_at": "2026-01-01T00:00:02+00:00",
+        "finished_at": "2026-01-01T00:00:10+00:00",
+        "status": "failed",
+        "exit_code": 1,
+        "output_bytes": 10,
+        "receipt_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "process": {
+          "pid": 123,
+          "birth": "synthetic-birth-1",
+          "pgid": 123,
+          "group_closed": true
+        }
+      },
+      {
+        "ordinal": 2,
+        "role": "verification",
+        "charged_at": "2026-01-01T00:00:11+00:00",
+        "started_at": "2026-01-01T00:00:12+00:00",
+        "finished_at": "2026-01-01T00:00:20+00:00",
+        "status": "success",
+        "exit_code": 0,
+        "output_bytes": 10,
+        "receipt_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "process": {
+          "pid": 124,
+          "birth": "synthetic-birth-2",
+          "pgid": 124,
+          "group_closed": true
+        }
+      }
+    ],
+    "resources": [
+      {
+        "owner_context": "cedar-author",
+        "owned": true,
+        "disposition": "closed",
+        "preservation": "commits-uncommitted-ignored",
+        "receipt_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      {
+        "owner_context": "synthetic-foreign-owner",
+        "owned": false,
+        "disposition": "preserved",
+        "receipt_sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+      }
+    ],
+    "effects": [
+      {
+        "name": "ci",
+        "status": "confirmed",
+        "project_id": "cedar",
+        "repository": "sample/cedar",
+        "task_id": "cedar-sample-task",
+        "head_sha": "1111111111111111111111111111111111111111",
+        "receipt_sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      {
+        "name": "merge",
+        "status": "confirmed",
+        "project_id": "cedar",
+        "repository": "sample/cedar",
+        "task_id": "cedar-sample-task",
+        "head_sha": "1111111111111111111111111111111111111111",
+        "receipt_sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      {
+        "name": "deployment",
+        "status": "confirmed",
+        "project_id": "cedar",
+        "repository": "sample/cedar",
+        "task_id": "cedar-sample-task",
+        "head_sha": "1111111111111111111111111111111111111111",
+        "receipt_sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      {
+        "name": "work_item",
+        "status": "confirmed",
+        "project_id": "cedar",
+        "repository": "sample/cedar",
+        "task_id": "cedar-sample-task",
+        "head_sha": "1111111111111111111111111111111111111111",
+        "receipt_sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      {
+        "name": "cleanup",
+        "status": "confirmed",
+        "project_id": "cedar",
+        "repository": "sample/cedar",
+        "task_id": "cedar-sample-task",
+        "head_sha": "1111111111111111111111111111111111111111",
+        "receipt_sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      {
+        "name": "notice",
+        "status": "confirmed",
+        "project_id": "cedar",
+        "repository": "sample/cedar",
+        "task_id": "cedar-sample-task",
+        "head_sha": "1111111111111111111111111111111111111111",
+        "receipt_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "received": true
+      }
+    ]
+  }
+}

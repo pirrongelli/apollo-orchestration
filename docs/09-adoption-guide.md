@@ -1,5 +1,7 @@
 # Chapter 9 — Adoption Guide: This Methodology in a Week
 
+> **Historical case study — informative.** [Apollo 2.0](12-apollo-2-standard.md) supersedes marker-only approvals, mandatory vendor/model choices and automatic promotion of lessons. The historical mechanisms below do not establish conformance or live operation of the new standard.
+
 The previous chapters describe a system that grew over months of production incidents. You do not need months to adopt it — you need a week, taken in the right order. This chapter lays out a staged path where each day's work is independently valuable: stop after Day 2 and you still have something worth having.
 
 The order is deliberate. Norms before structure, walls before autonomy, verification before trust. Do not skip ahead to agents and loops before the constitution and the hooks exist — an autonomous AI without walls is exactly the thing this methodology exists to prevent.
