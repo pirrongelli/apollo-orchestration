@@ -32,6 +32,13 @@ def text(value, name):
     return value
 
 
+def context_identity(value, name):
+    text(value, name)
+    require(value == value.strip() and value == value.casefold(),
+            name + ' must use canonical case without surrounding whitespace')
+    return value.casefold()
+
+
 def integer(value, name, minimum=0):
     require(type(value) is int and value >= minimum, name + ' must be an integer')
     return value
@@ -121,8 +128,9 @@ def validate_reviews(project, intent, evidence):
     require(risk in ('routine', 'sensitive'), 'unknown risk classification')
     sensitive = any(path.startswith(prefix) for path in changed for prefix in prefixes)
     require(not sensitive or risk == 'sensitive', 'sensitive path mislabeled routine')
-    authors = set(names(intent.get('implementation_contexts'), 'implementation_contexts'))
-    authors.add(text(intent.get('coordinator_context'), 'coordinator_context'))
+    authors = {context_identity(context, 'implementation context') for context in
+               names(intent.get('implementation_contexts'), 'implementation_contexts')}
+    authors.add(context_identity(intent.get('coordinator_context'), 'coordinator_context'))
     reviews = evidence.get('reviews')
     require(isinstance(reviews, list) and 1 <= len(reviews) <= 200, 'missing reviews')
     required = 2 if risk == 'sensitive' else 1
@@ -131,7 +139,7 @@ def validate_reviews(project, intent, evidence):
     report_hashes = set()
     for review in reviews:
         object_value(review, 'review')
-        context = text(review.get('context'), 'review context')
+        context = context_identity(review.get('context'), 'review context')
         require(context not in contexts, 'review context is not independent')
         contexts.add(context)
         text(review.get('provider'), 'provider')

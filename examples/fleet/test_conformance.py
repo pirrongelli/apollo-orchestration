@@ -126,6 +126,38 @@ class Conformance(unittest.TestCase):
         second['report'] = first['report']
         second['report_sha256'] = first['report_sha256']
         self.refused('review')
+    def test_reviewer_context_aliases_of_authors_are_refused(self):
+        for context in (*self.intent['implementation_contexts'], self.intent['coordinator_context']):
+            for alias in (' ' + context, context + ' ', context + '\t', context.upper()):
+                with self.subTest(alias=alias):
+                    self.evidence['reviews'][0]['context'] = alias
+                    self.refused('review')
+    def test_aliases_cannot_count_as_distinct_reviewer_contexts(self):
+        context = self.evidence['reviews'][0]['context']
+        for alias in (' ' + context, context + ' ', context + '\t', context.upper()):
+            with self.subTest(alias=alias):
+                self.evidence['reviews'][1]['context'] = alias
+                self.refused('review')
+    def test_noncanonical_author_inventory_cannot_hide_self_review(self):
+        for field in ('implementation_contexts', 'coordinator_context'):
+            context = self.intent[field][0] if field == 'implementation_contexts' else self.intent[field]
+            for alias in (' ' + context, context + ' ', context.upper()):
+                with self.subTest(field=field, alias=alias):
+                    self.evidence['reviews'][0]['context'] = context
+                    if field == 'implementation_contexts':
+                        self.intent[field][0] = alias
+                    else:
+                        self.intent[field] = alias
+                    self.changed_intent()
+                    self.refused('review')
+            if field == 'implementation_contexts':
+                self.intent[field][0] = context
+            else:
+                self.intent[field] = context
+    def test_canonical_distinct_contexts_preserve_original_metadata(self):
+        original = json.dumps(self.evidence, sort_keys=True)
+        self.assertEqual(self.run_contract('review'), 'REVIEW: local contract satisfied')
+        self.assertEqual(json.dumps(self.evidence, sort_keys=True), original)
     def test_block_report_even_if_declared_ship(self):
         self.report(0, 'VERDICT: SHIP', 'VERDICT: BLOCK'); self.refused()
     def test_report_foreign_base(self):
