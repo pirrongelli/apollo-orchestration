@@ -48,34 +48,20 @@ Then do the step almost everyone skips: **test each hook by asking the AI to vio
 
 After Day 2 you can safely say "finish the job without asking me" — because the actions that must never happen autonomously now *cannot* happen autonomously.
 
-## Day 3 — The verification gate (historical, non-runnable)
+## Day 3 — Structured review admission
 
-The remaining Day 3 steps describe the superseded marker-only flow; do not
-install or run them. Its approval writer and merge gate are retired refusals.
-Current adoption requires a project-specific forge adapter that authenticates
-original exact-head/base independent reviews, observes current required CI,
-pins the reviewed head and retains the real merge receipt. Adversarially test
-that adapter before using it. The [local reference](../examples/fleet/README.md)
-validates attestations only; this repository ships no live admission adapter.
+Follow [Apollo 2.0](12-apollo-2-standard.md), especially A2-08 through A2-10.
+Admission requires original independent reviews for the exact head and diff
+base, exclusion of every author, and the reviewer count required by the
+project's sensitivity policy. A different vendor is optional unless the project
+explicitly requires it; a marker file does not establish approval.
 
-Now install cross-vendor review: the merge gate and record-approval flow from Chapter 2, using the hook and scripts in `examples/hooks/`.
-
-Prerequisites: a second-vendor CLI. If your primary agent is Claude, the OpenAI Codex CLI is the natural counterpart — any model runner from a *different* family works, but same-family review is a correlated channel and buys much less. Give it read-only sandbox access to the repo.
-
-The flow to wire up:
-
-1. When a PR opens, feed the reviewer the **exact diff** — never a summary — with a skeptical prompt that demands a binary SHIP/BLOCK verdict.
-2. On SHIP, record an approval file keyed to the PR's **head commit SHA** (not the PR number, not the branch — those survive new commits; SHAs do not).
-3. The PreToolUse hook denies any merge command unless the approval file for the current head SHA exists.
-
-Start **advisory**: run the review on every PR, read the verdicts, but leave the hook uninstalled for the first several PRs. This builds calibration — you learn what your second vendor is good at catching and how often it BLOCKs — without gating your workflow on a prompt you haven't tuned yet. Once the verdicts have earned your trust (for us that took under a week), flip to hook-enforced and never look back. Run the review in parallel with CI so the enforced gate costs no wall-clock time.
-
-Two tuning notes from experience:
-
-- **Aim the prompt at your doer's known weaknesses.** A generic "review this" produces polite nitpicks. "Assume this diff contains a bug; look especially at concurrency, idempotency, and auth boundaries" produces findings.
-- **Relay verdicts verbatim.** An orchestrating agent summarizing a harsh review will round it toward politeness. The raw text is the signal.
-
-**Verify Day 3 worked:** with the hook installed, attempt a merge on a PR with no recorded approval and watch the denial name the missing SHA. Then record the approval and watch the same command pass.
+A project-specific forge adapter must authenticate those records, observe
+current required CI, pin the reviewed head and retain the real merge receipt.
+Test its refusal paths before using it. This repository ships no live admission
+adapter: the [local reference](../examples/fleet/README.md) validates supplied
+attestations only. The historical approval writer and merge gate are retired
+refusal stubs, not installation or admission steps.
 
 ## Day 4 — Agents
 
