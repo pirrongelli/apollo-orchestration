@@ -80,6 +80,20 @@ class Conformance(unittest.TestCase):
         self.assertEqual(validator.parse(b'{"observations":[1.5,-2e3,1e-3]}'),
                          {'observations': [1.5, -2000.0, 0.001]})
 
+    def test_nul_scope_path_is_refused(self):
+        path = 'policy/invalid\0.py'
+        self.intent['allowed_paths'] = [path]
+        self.evidence['changed_paths'] = [path]
+        self.changed_intent()
+        self.refused()
+
+    def test_legitimate_scope_filename_characters_remain_valid(self):
+        path = "policy/space 'quote' $value; café.py"
+        self.intent['allowed_paths'] = [path]
+        self.evidence['changed_paths'] = [path]
+        self.changed_intent()
+        self.assertEqual(self.run_contract(), 'COMPLETE: local contract satisfied')
+
     def test_stale_head(self): self.refused(head='9' * 40)
     def test_stale_base(self): self.refused(base='9' * 40)
     def test_changed_project(self):

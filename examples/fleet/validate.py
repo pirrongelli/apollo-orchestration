@@ -55,7 +55,8 @@ def path_value(value):
     text(value, 'scope path')
     path = PurePosixPath(value)
     require(not path.is_absolute() and '..' not in path.parts and '\\' not in value
-            and value not in ('.', '') and path.as_posix() == value, 'invalid relative scope path')
+            and '\0' not in value and value not in ('.', '')
+            and path.as_posix() == value, 'invalid relative scope path')
     return value
 
 
