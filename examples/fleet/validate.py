@@ -213,6 +213,7 @@ def validate_completion(project, intent, evidence, start, cutoff, limits):
     for effect in effects:
         bound_identity(effect, intent, ('project_id', 'repository', 'task_id', 'head_sha'))
         name = text(effect.get('name'), 'effect name')
+        require(name in intent['authorization']['effects'], 'observed effect lacks authorization')
         observed.append(name)
         require(effect.get('status') == 'confirmed', 'effect failed or unknown')
         digest(effect.get('receipt_sha256'), 'effect receipt')

@@ -59,6 +59,18 @@ class Conformance(unittest.TestCase):
         del self.evidence['completion']
         self.assertEqual(self.run_contract('review'), 'REVIEW: local contract satisfied')
 
+    def test_every_observed_effect_requires_authorization(self):
+        effect = dict(self.evidence['completion']['effects'][0], name='production-delete')
+        self.evidence['completion']['effects'].append(effect)
+        self.refused()
+
+    def test_explicitly_authorized_additional_effect(self):
+        self.intent['authorization']['effects'].append('additional-delivery')
+        self.changed_intent()
+        effect = dict(self.evidence['completion']['effects'][0], name='additional-delivery')
+        self.evidence['completion']['effects'].append(effect)
+        self.assertEqual(self.run_contract(), 'COMPLETE: local contract satisfied')
+
     def test_stale_head(self): self.refused(head='9' * 40)
     def test_stale_base(self): self.refused(base='9' * 40)
     def test_changed_project(self):
