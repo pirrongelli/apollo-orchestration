@@ -53,6 +53,8 @@ class Conformance(unittest.TestCase):
                 self.raw = (directory / 'intent.json').read_bytes()
                 self.intent = json.loads(self.raw)
                 self.evidence = json.loads((directory / 'evidence.json').read_text())
+                self.assertEqual(len({review['report_sha256'] for review in self.evidence['reviews']}), 2)
+                self.assertEqual(len({review['report'] for review in self.evidence['reviews']}), 2)
                 self.assertEqual(self.run_contract(), 'COMPLETE: local contract satisfied')
 
     def test_review_does_not_claim_completion(self):
@@ -119,6 +121,11 @@ class Conformance(unittest.TestCase):
         self.evidence['reviews'][0]['context'] = self.intent['coordinator_context']; self.refused()
     def test_duplicate_review_context(self):
         self.evidence['reviews'][1]['context'] = self.evidence['reviews'][0]['context']; self.refused()
+    def test_copied_original_reports_from_distinct_contexts_are_refused(self):
+        first, second = self.evidence['reviews']
+        second['report'] = first['report']
+        second['report_sha256'] = first['report_sha256']
+        self.refused('review')
     def test_block_report_even_if_declared_ship(self):
         self.report(0, 'VERDICT: SHIP', 'VERDICT: BLOCK'); self.refused()
     def test_report_foreign_base(self):

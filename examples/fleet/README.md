@@ -52,6 +52,8 @@ GATES: PASS
 BLOCK or contradictory reports cannot be admitted. The coordinator and every
 implementer are excluded from review; routine/sensitive scopes require one/two
 distinct contexts. Original report hashes are checked without normalizing text.
+Each review must have distinct original report bytes and a distinct verified
+digest; copied reports under different declared contexts cannot satisfy review.
 Gates include head/base, PASS, positive `executed`, zero `skipped` and a receipt
 digest. A receipt digest field validates shape only; the integrator must retain,
 authenticate and inspect the referenced original.

@@ -128,6 +128,7 @@ def validate_reviews(project, intent, evidence):
     required = 2 if risk == 'sensitive' else 1
     require(len(reviews) >= required, f'{required} independent contexts required')
     contexts = set(authors)
+    report_hashes = set()
     for review in reviews:
         object_value(review, 'review')
         context = text(review.get('context'), 'review context')
@@ -143,8 +144,11 @@ def validate_reviews(project, intent, evidence):
         report = review.get('report')
         require(isinstance(report, str) and 0 < len(report.encode('utf-8')) <= 24000,
                 'missing or oversized original report')
-        require(hashlib.sha256(report.encode('utf-8')).hexdigest()
-                == digest(review.get('report_sha256'), 'report_sha256'), 'original report was altered')
+        report_hash = hashlib.sha256(report.encode('utf-8')).hexdigest()
+        require(report_hash == digest(review.get('report_sha256'), 'report_sha256'),
+                'original report was altered')
+        require(report_hash not in report_hashes, 'copied original review report')
+        report_hashes.add(report_hash)
         for label, expected in (('HEAD_SHA', intent['head_sha']), ('BASE_SHA', intent['base_sha']),
                                 ('VERDICT', 'SHIP'), ('RULES_FAILED', 'NONE'), ('GATES', 'PASS')):
             report_line(report, label, expected)

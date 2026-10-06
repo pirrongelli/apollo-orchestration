@@ -17,8 +17,8 @@
       "observed_model": null,
       "context": "harbor-reviewer-1",
       "verdict": "SHIP",
-      "report": "HEAD_SHA: 2222222222222222222222222222222222222222\nBASE_SHA: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
-      "report_sha256": "ae1eb6fabf82d57c00f5c137736a0a2730a042f05bf1772e5e42a8c634b119aa"
+      "report": "HEAD_SHA: 2222222222222222222222222222222222222222\nBASE_SHA: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC_CONTEXT: harbor-reviewer-1\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
+      "report_sha256": "e3821061a187af63341b7a0ebc944a55b7e7fb83319384ba38fd7cf50854861f"
     },
     {
       "provider": "synthetic-provider",
@@ -26,8 +26,8 @@
       "observed_model": null,
       "context": "harbor-reviewer-2",
       "verdict": "SHIP",
-      "report": "HEAD_SHA: 2222222222222222222222222222222222222222\nBASE_SHA: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
-      "report_sha256": "ae1eb6fabf82d57c00f5c137736a0a2730a042f05bf1772e5e42a8c634b119aa"
+      "report": "HEAD_SHA: 2222222222222222222222222222222222222222\nBASE_SHA: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC_CONTEXT: harbor-reviewer-2\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
+      "report_sha256": "983d8d713e791c23a551b9db2068a8659272288c0d94946b9f58db943d04160f"
     }
   ],
   "gates": [

@@ -17,8 +17,8 @@
       "observed_model": null,
       "context": "cedar-reviewer-1",
       "verdict": "SHIP",
-      "report": "HEAD_SHA: 1111111111111111111111111111111111111111\nBASE_SHA: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
-      "report_sha256": "a635b76b7a6f7a59d75d3a015ef1ef4602537306efcce40264412fb73ddd4bae"
+      "report": "HEAD_SHA: 1111111111111111111111111111111111111111\nBASE_SHA: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC_CONTEXT: cedar-reviewer-1\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
+      "report_sha256": "c7772688bec0411816c3ada364bd35f0c576299b868791cad53a0e8d6071f98b"
     },
     {
       "provider": "synthetic-provider",
@@ -26,8 +26,8 @@
       "observed_model": null,
       "context": "cedar-reviewer-2",
       "verdict": "SHIP",
-      "report": "HEAD_SHA: 1111111111111111111111111111111111111111\nBASE_SHA: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
-      "report_sha256": "a635b76b7a6f7a59d75d3a015ef1ef4602537306efcce40264412fb73ddd4bae"
+      "report": "HEAD_SHA: 1111111111111111111111111111111111111111\nBASE_SHA: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nVERDICT: SHIP\nRULES_FAILED: NONE\nGATES: PASS\n\nSYNTHETIC_CONTEXT: cedar-reviewer-2\nSYNTHETIC FIXTURE: no model or live controller ran.\n",
+      "report_sha256": "3dc97dbc7a26afded8b4745ff68263a46bf6e7145c7d228144accad0b9a5ebeb"
     }
   ],
   "gates": [
