@@ -271,6 +271,67 @@ class Conformance(unittest.TestCase):
         original = json.dumps(self.evidence, sort_keys=True)
         self.assertEqual(self.run_contract(), 'COMPLETE: local contract satisfied')
         self.assertEqual(json.dumps(self.evidence, sort_keys=True), original)
+
+    def test_path_aliases_cannot_hide_any_context_role(self):
+        for project in ('cedar', 'harbor'):
+            directory = ROOT / 'fixtures' / project
+            baseline_intent = json.loads((directory / 'intent.json').read_text())
+            baseline_evidence = json.loads((directory / 'evidence.json').read_text())
+            baseline_intent['implementation_contexts'] = ['/root/author']
+            baseline_intent['coordinator_context'] = '/root/coordinator'
+            baseline_evidence['reviews'][0]['context'] = '/root/reviewer-1'
+            baseline_evidence['reviews'][1]['context'] = '/root/reviewer-2'
+            baseline_evidence['completion']['resources'][0]['owner_context'] = '/root/author'
+            for role in ('implementation', 'coordinator', 'reviewer', 'resource'):
+                context = '/root/coordinator' if role == 'coordinator' else '/root/author'
+                parent, name = context.rsplit('/', 1)
+                aliases = (parent + '//' + name, context + '/', parent + '/./' + name,
+                           parent + '/x/../' + name, context.lstrip('/'), './/' + context.lstrip('/'))
+                for alias in aliases:
+                    with self.subTest(project=project, role=role, alias=alias):
+                        self.project = json.loads((directory / 'project.json').read_text())
+                        self.intent = json.loads(json.dumps(baseline_intent))
+                        self.evidence = json.loads(json.dumps(baseline_evidence))
+                        if role == 'implementation':
+                            self.intent['implementation_contexts'][0] = alias
+                            self.evidence['reviews'][0]['context'] = context
+                        elif role == 'coordinator':
+                            self.intent['coordinator_context'] = alias
+                            self.evidence['reviews'][0]['context'] = context
+                        elif role == 'reviewer':
+                            self.evidence['reviews'][0]['context'] = alias
+                        else:
+                            resource = self.evidence['completion']['resources'][0]
+                            resource.update(owner_context=alias, owned=False, disposition='preserved')
+                            resource.pop('preservation', None)
+                        self.changed_intent()
+                        self.refused('complete' if role == 'resource' else 'review')
+
+    def test_identifiers_require_named_tokens_and_canonical_absolute_paths(self):
+        for context in ('-', '.', '..', '/', '//', ':', '_', '--', '/root/.', '/root/..',
+                        'root/author', '/root//author', '/root/author/', '/root/./author',
+                        '/root/x/../author', '/root/-', 'a' * 513, '/' + 'a' * 512):
+            with self.subTest(context=context), self.assertRaises(ValueError):
+                validator.context_identity(context, 'test context')
+
+    def test_canonical_named_tokens_paths_and_length_boundaries_conform(self):
+        for project in ('cedar', 'harbor'):
+            directory = ROOT / 'fixtures' / project
+            for context in ('a', '0', '01234567-89ab-cdef-0123-456789abcdef',
+                            'name.group:v1_2', '/root/author', '/root/nested/author',
+                            'a' * 512, '/' + 'a' * 511):
+                with self.subTest(project=project, context=context):
+                    self.project = json.loads((directory / 'project.json').read_text())
+                    self.raw = (directory / 'intent.json').read_bytes()
+                    self.intent = json.loads(self.raw)
+                    self.evidence = json.loads((directory / 'evidence.json').read_text())
+                    self.intent['implementation_contexts'] = [context]
+                    self.evidence['completion']['resources'][0]['owner_context'] = context
+                    self.changed_intent()
+                    original = json.dumps(self.evidence, sort_keys=True)
+                    self.assertEqual(self.run_contract(), 'COMPLETE: local contract satisfied')
+                    self.assertEqual(json.dumps(self.evidence, sort_keys=True), original)
+
     def test_unknown_attempt(self):
         self.evidence['completion']['attempts'][0]['status'] = 'unknown'; self.refused()
     def test_duplicate_charge(self):

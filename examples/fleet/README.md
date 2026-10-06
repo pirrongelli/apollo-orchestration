@@ -55,10 +55,14 @@ distinct contexts. Original report hashes are checked without normalizing text.
 Each review must have distinct original report bytes and a distinct verified
 digest; copied reports under different declared contexts cannot satisfy review.
 Coordinator, implementation, review and resource-owner context identifiers are
-opaque tokens matching `[a-z0-9._:/-]{1,512}` exactly: lowercase ASCII letters,
-digits, dot, underscore, colon, slash and hyphen. UUIDs and native path IDs fit
-this grammar. Whitespace, controls, invisible characters, Unicode confusables
-and alternate Unicode normalization forms are refused, never rewritten.
+bounded identifiers of 1–512 ASCII characters in exactly two forms: an opaque
+named token matching `[a-z0-9][a-z0-9._:-]*`, or an absolute context path
+`/token[/token...]` whose every component matches that token grammar. Lowercase
+UUIDs and `/root/reviewer-1` are valid. Relative slash paths, repeated or trailing
+slashes, dot/parent components and punctuation-only tokens are refused. These
+are local identifiers, not filesystem resolution: no symlink or backend identity
+equivalence is inferred. Whitespace, controls, invisible characters, Unicode
+confusables and alternate normalization forms are refused, never rewritten.
 Exclusion, uniqueness and resource ownership use the same exact token identity.
 Assign these identifiers before recording intent and evidence; retain original
 provider/session metadata separately. Token syntax does not authenticate a

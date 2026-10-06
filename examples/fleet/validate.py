@@ -14,6 +14,8 @@ from pathlib import Path, PurePosixPath
 import re
 
 MAX_INPUT_BYTES = 1024 * 1024
+CONTEXT_TOKEN = r'[a-z0-9][a-z0-9._:-]*'
+CONTEXT_IDENTITY = CONTEXT_TOKEN + r'|/' + CONTEXT_TOKEN + r'(?:/' + CONTEXT_TOKEN + r')*'
 
 
 def require(condition, message):
@@ -34,8 +36,8 @@ def text(value, name):
 
 def context_identity(value, name):
     text(value, name)
-    require(re.fullmatch(r'[a-z0-9._:/-]{1,512}', value),
-            name + ' must be a bounded lowercase ASCII machine identifier')
+    require(re.fullmatch(CONTEXT_IDENTITY, value),
+            name + ' must be a named lowercase ASCII token or canonical absolute context path')
     return value
 
 

@@ -50,9 +50,14 @@ cannot grant permissions, select a new recipient or relax a control.
 Context identifiers used for ownership and review MUST follow a declared,
 bounded machine-token grammar that refuses whitespace, controls, invisible
 characters and confusable aliases rather than silently normalizing them.
-The reference grammar is `[a-z0-9._:/-]{1,512}`; it admits lowercase ASCII UUID
-and native path tokens. Original runtime metadata MUST remain separately
-retained: a valid local token does not establish identity or authenticity.
+The reference grammar permits 1–512 ASCII characters: a named token matching
+`[a-z0-9][a-z0-9._:-]*`, or an absolute context path `/token[/token...]` with
+every component matching that token grammar. Relative paths, empty components,
+trailing slashes, dot/parent components and punctuation-only tokens MUST be
+refused, not normalized. UUIDs and canonical absolute native context paths fit;
+filesystem aliases and backend equivalence are not inferred. Original runtime
+metadata MUST remain separately retained: valid syntax does not establish
+identity or authenticity.
 
 ## Reference record and runtime responsibilities
 
