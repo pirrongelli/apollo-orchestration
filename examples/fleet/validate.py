@@ -34,9 +34,9 @@ def text(value, name):
 
 def context_identity(value, name):
     text(value, name)
-    require(value == value.strip() and value == value.casefold(),
-            name + ' must use canonical case without surrounding whitespace')
-    return value.casefold()
+    require(re.fullmatch(r'[a-z0-9._:/-]{1,512}', value),
+            name + ' must be a bounded lowercase ASCII machine identifier')
+    return value
 
 
 def integer(value, name, minimum=0):

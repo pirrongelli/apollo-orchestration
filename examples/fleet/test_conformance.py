@@ -225,6 +225,52 @@ class Conformance(unittest.TestCase):
             with self.subTest(changes=changes):
                 self.evidence['completion']['resources'][0] = {**original, **changes}
                 self.refused()
+    def test_machine_identifiers_refuse_non_ascii_aliases_in_every_role(self):
+        for project in ('cedar', 'harbor'):
+            directory = ROOT / 'fixtures' / project
+            for role in ('implementation', 'coordinator', 'reviewer', 'resource'):
+                baseline = json.loads((directory / 'intent.json').read_text())
+                context = (baseline['coordinator_context'] if role == 'coordinator'
+                           else baseline['implementation_contexts'][0])
+                aliases = [context + suffix for suffix in
+                           ('\u200b', '\u200c', '\u200d', '\u2060', '\ufeff',
+                            '\0', '\x1b', '\x7f', '\ninner', 'é', 'e\u0301')]
+                aliases += [context.replace('-', '\u2010', 1),
+                            context.replace('a', '\u0430', 1), context.replace('a', 'ａ', 1)]
+                for alias in aliases:
+                    with self.subTest(project=project, role=role, alias=alias):
+                        self.project = json.loads((directory / 'project.json').read_text())
+                        self.raw = (directory / 'intent.json').read_bytes()
+                        self.intent = json.loads(self.raw)
+                        self.evidence = json.loads((directory / 'evidence.json').read_text())
+                        if role == 'implementation':
+                            self.intent['implementation_contexts'][0] = alias
+                            self.evidence['reviews'][0]['context'] = context
+                            self.changed_intent()
+                        elif role == 'coordinator':
+                            self.intent['coordinator_context'] = alias
+                            self.evidence['reviews'][0]['context'] = context
+                            self.changed_intent()
+                        elif role == 'reviewer':
+                            self.evidence['reviews'][0]['context'] = alias
+                        else:
+                            resource = self.evidence['completion']['resources'][0]
+                            resource.update(owner_context=alias, owned=False, disposition='preserved')
+                            resource.pop('preservation', None)
+                        self.refused('complete' if role == 'resource' else 'review')
+
+    def test_ascii_machine_identifiers_admit_uuid_paths_and_token_punctuation(self):
+        author = '01234567-89ab-cdef-0123-456789abcdef'
+        self.intent['implementation_contexts'] = [author]
+        self.intent['coordinator_context'] = '/root/coordinator'
+        self.evidence['reviews'][0]['context'] = '/root/reviewer-1'
+        self.evidence['reviews'][1]['context'] = 'reviewer.namespace:v1_2'
+        self.evidence['completion']['resources'][0]['owner_context'] = author
+        self.evidence['completion']['resources'][1]['owner_context'] = 'foreign.resource:v1_2'
+        self.changed_intent()
+        original = json.dumps(self.evidence, sort_keys=True)
+        self.assertEqual(self.run_contract(), 'COMPLETE: local contract satisfied')
+        self.assertEqual(json.dumps(self.evidence, sort_keys=True), original)
     def test_unknown_attempt(self):
         self.evidence['completion']['attempts'][0]['status'] = 'unknown'; self.refused()
     def test_duplicate_charge(self):

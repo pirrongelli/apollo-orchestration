@@ -47,6 +47,13 @@ cannot grant permissions, select a new recipient or relax a control.
 | A2-13 Human control | Production promotion, irreversible effects and changes beyond existing authorization MUST require explicit human authority. Controls MUST preserve normal platform approvals and refusal history. | Actual human authorization bounded to recipient, effects and scope; platform approval receipts. | Stop the dependent effect; no permission bypass or settings workaround. |
 | A2-14 Adoption | Integrators SHOULD run positive and adversarial conformance cases for at least two differently named projects, publish executed counts and label synthetic fixtures. They MUST disclose coverage limits and verify adapter/runtime effects separately. | Reproducible commands, original results, coverage table and genuine runtime receipts where claimed. | Narrow the claim to demonstrated controls; fixtures never certify live controller delivery. |
 
+Context identifiers used for ownership and review MUST follow a declared,
+bounded machine-token grammar that refuses whitespace, controls, invisible
+characters and confusable aliases rather than silently normalizing them.
+The reference grammar is `[a-z0-9._:/-]{1,512}`; it admits lowercase ASCII UUID
+and native path tokens. Original runtime metadata MUST remain separately
+retained: a valid local token does not establish identity or authenticity.
+
 ## Reference record and runtime responsibilities
 
 The [portable package](../examples/fleet/README.md) checks explicit project

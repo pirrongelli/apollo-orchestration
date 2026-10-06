@@ -54,12 +54,15 @@ implementer are excluded from review; routine/sensitive scopes require one/two
 distinct contexts. Original report hashes are checked without normalizing text.
 Each review must have distinct original report bytes and a distinct verified
 digest; copied reports under different declared contexts cannot satisfy review.
-Coordinator, implementation and review context identifiers are bounded opaque
-strings in canonical case-folded form, without leading or trailing whitespace.
-Noncanonical identifiers are refused, never silently rewritten; exclusion and
-uniqueness use the same case-folded identity. Assign these local identifiers
-before recording intent and evidence. This validates local identifier syntax,
-not the authenticity of a provider context or backend model.
+Coordinator, implementation, review and resource-owner context identifiers are
+opaque tokens matching `[a-z0-9._:/-]{1,512}` exactly: lowercase ASCII letters,
+digits, dot, underscore, colon, slash and hyphen. UUIDs and native path IDs fit
+this grammar. Whitespace, controls, invisible characters, Unicode confusables
+and alternate Unicode normalization forms are refused, never rewritten.
+Exclusion, uniqueness and resource ownership use the same exact token identity.
+Assign these identifiers before recording intent and evidence; retain original
+provider/session metadata separately. Token syntax does not authenticate a
+provider context or backend model.
 Gates include head/base, PASS, positive `executed`, zero `skipped` and a receipt
 digest. A receipt digest field validates shape only; the integrator must retain,
 authenticate and inspect the referenced original.
