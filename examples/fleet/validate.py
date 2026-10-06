@@ -220,7 +220,8 @@ def validate_completion(project, intent, evidence, start, cutoff, limits):
     owners = {*intent['implementation_contexts'], intent['coordinator_context']}
     for resource in resources:
         object_value(resource, 'resource')
-        owner, owned = text(resource.get('owner_context'), 'resource owner'), resource.get('owned')
+        owner = context_identity(resource.get('owner_context'), 'resource owner')
+        owned = resource.get('owned')
         require(type(owned) is bool and owned == (owner in owners), 'ownership contradicts task custody')
         digest(resource.get('receipt_sha256'), 'resource receipt')
         if owned:

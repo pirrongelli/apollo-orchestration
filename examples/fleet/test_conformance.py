@@ -203,6 +203,28 @@ class Conformance(unittest.TestCase):
         self.evidence['completion']['resources'][1]['disposition'] = 'closed'; self.refused()
     def test_lost_ignored_evidence(self):
         self.evidence['completion']['resources'][0]['preservation'] = 'commits-only'; self.refused()
+    def test_resource_owner_aliases_cannot_bypass_owned_cleanup(self):
+        for project in ('cedar', 'harbor'):
+            directory = ROOT / 'fixtures' / project
+            self.project = json.loads((directory / 'project.json').read_text())
+            self.raw = (directory / 'intent.json').read_bytes()
+            self.intent = json.loads(self.raw)
+            self.evidence = json.loads((directory / 'evidence.json').read_text())
+            for owner in (*self.intent['implementation_contexts'], self.intent['coordinator_context']):
+                for alias in (owner.upper(), ' ' + owner, owner + ' '):
+                    with self.subTest(project=project, alias=alias):
+                        resource = self.evidence['completion']['resources'][0]
+                        resource.update(owner_context=alias, owned=False, disposition='preserved')
+                        resource.pop('preservation', None)
+                        self.refused()
+    def test_owned_resource_keeps_boolean_and_preservation_guards(self):
+        original = dict(self.evidence['completion']['resources'][0])
+        for changes in ({'owned': 0}, {'owned': 'false'},
+                        {'owned': False, 'disposition': 'preserved'},
+                        {'disposition': 'active'}, {'preservation': 'commits-only'}):
+            with self.subTest(changes=changes):
+                self.evidence['completion']['resources'][0] = {**original, **changes}
+                self.refused()
     def test_unknown_attempt(self):
         self.evidence['completion']['attempts'][0]['status'] = 'unknown'; self.refused()
     def test_duplicate_charge(self):
