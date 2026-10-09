@@ -170,8 +170,7 @@ adopting Apollo is not a certification, regulatory approval, endorsement or
 determination of legal compliance.
 [NIST AI RMF overview](https://www.nist.gov/itl/ai-risk-management-framework).
 Financial organizations still need their own domain, security and legal
-assessments. This article makes no immigration-eligibility or universal
-model-security claim.
+assessments. This article makes no universal model-security claim.
 
 ## What a stronger evaluation would measure
 
