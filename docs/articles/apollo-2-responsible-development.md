@@ -94,8 +94,9 @@ renewals and final five spent credits remain exhausted. No further pilot is
 implied. The accepted result is reviewed maintenance, not an autonomous lifecycle
 success or a reversal of earlier finite failures.
 
-Normal explicit reconciliation subsequently released claim and registry custody
-with the budget unchanged and the delivery flag still false. That administrative
+Before the physical cleanup, normal explicit reconciliation at 02:00:14 UTC
+released claim and registry custody with the budget unchanged and the delivery
+flag still false. That administrative
 result is separate from work-item delivery acceptance. The separately observed
 manual physical closure does not demonstrate autonomous lifecycle completion.
 
