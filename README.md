@@ -17,8 +17,10 @@ vendor choices, orchestration patterns and marker-only approval examples are
 superseded where they conflict with version 2.0. [Chapter 13](docs/13-operational-case.md)
 reports accepted maintenance delivered to a private integration's development
 branch on 2026-10-09. Its ten heterogeneous historical native work executions
-still have zero completed autonomous lifecycles. Work-item reconciliation,
-owned directory and Git-registration closure, and notice receipt remain pending.
+still have zero completed autonomous lifecycles. Work-item reconciliation
+and original reserved-notice receipt remain unverified. Owned directory and
+Git-registration closure was verified later at 02:09:15 UTC through maintainer
+intervention with retained evidence; it is not an autonomous closure demonstration.
 Private validation is distinct from the public synthetic reference; no production
 or complete default-entrypoint demonstration is claimed.
 

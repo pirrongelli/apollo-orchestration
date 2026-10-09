@@ -9,9 +9,17 @@ custody while preserving the budget and failure history; its delivery flag
 remained false. This administrative reconciliation is distinct from authoritative
 work-item delivery acceptance and physical closure.
 
-**Pending:** authoritative work-item reconciliation, removal of both the owned
-working directory and its Git registration, and verified receipt of the
-completion notice. Update these claims only from actual retained receipts.
+**Later observation, 02:09:15 UTC:** the owned directory and Git registration
+were both confirmed absent. The normal Git removal first returned Directory not
+empty after deregistration. A maintainer preserved the remaining files and links
+in a private archive, verified them, and completed the partial cleanup. An initial
+archive-comparison failure is retained separately from the successful fresh
+verification. This establishes guarded operator cleanup, not an autonomous
+default-entrypoint closure. The original Goal delivery flag and spent budget
+remained unchanged.
+
+**Unverified for the original finite lifecycle:** authoritative work-item
+delivery reconciliation and receipt of the reserved completion notice.
 
 [Apollo 2.0](12-apollo-2-standard.md) specifies a project-independent method.
 This chapter describes one private integration of that method, including its
@@ -169,11 +177,12 @@ The stock retirement route does not accept the observed combination of
 successful work and failed delivery as completed retirement. No resource removal
 or notice receipt should be inferred from source approval or development merge.
 
-**Maintainer update pending:** retain actual work-item reconciliation, owned
-directory and Git-registration closure receipts, and the intended recipient's
-verified notice before changing those claims. Such later observations must be
-dated separately and must not retroactively convert the failed finite trials
-into autonomous successes.
+The separately dated operator cleanup above confirms owned physical and
+Git-registration closure with preserved originals. It does not establish stock
+Goal retirement or autonomous delivery. Authoritative work-item delivery
+reconciliation and the original reserved notice remain unverified; later
+observations must not retroactively convert failed finite trials into autonomous
+successes.
 
 Reviewed learning means an evidence-backed rule with retained failure history
 and an independent promotion decision. It does not mean model-weight training.

@@ -72,7 +72,7 @@ under preservation guards.
 ## A single integration case, with disclosed interventions
 
 The [operational case](../13-operational-case.md) is a sanitized maintainer report,
-not a controlled comparison. Private logs and customer-sensitive context are
+not a controlled comparison. Private execution logs and integration source context are
 retained privately. Successive candidate versions, shared host capacity,
 development-target changes and maintainer corrections make the ten actual native
 work executions heterogeneous. Zero completed autonomous lifecycles is a
@@ -86,16 +86,18 @@ issued authentic favorable verdicts with no canonical R11 finding. The maintaine
 accepted development delivery at 2026-10-09T01:39:22Z. These are private integration
 results, separate from the public 106 synthetic checks.
 
-Work-item reconciliation, physical owned closure and verified completion-notice
-receipt remain pending at this article's evidence boundary. The original three
+Work-item delivery reconciliation and the original reserved completion-notice
+receipt remain unverified. Owned physical and Git-registration closure was
+subsequently verified at 02:09:15 UTC through explicit maintainer intervention,
+including private archival of remnants after a partial Git removal. The original three
 renewals and final five spent credits remain exhausted. No further pilot is
 implied. The accepted result is reviewed maintenance, not an autonomous lifecycle
 success or a reversal of earlier finite failures.
 
 Normal explicit reconciliation subsequently released claim and registry custody
 with the budget unchanged and the delivery flag still false. That administrative
-result is separate from work-item delivery acceptance and manual physical
-closure; neither is inferred here.
+result is separate from work-item delivery acceptance. The separately observed
+manual physical closure does not demonstrate autonomous lifecycle completion.
 
 Independent review found useful counterexamples despite broad green suites.
 One interruption occurred after a shared reservation journal was written but
