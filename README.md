@@ -14,8 +14,18 @@ No particular application, provider, board service or agent harness is required.
 [Chapter 12](docs/12-apollo-2-standard.md) is normative. Chapters 01–11 describe
 an informative historical case study from a regulated software platform. Their
 vendor choices, orchestration patterns and marker-only approval examples are
-superseded where they conflict with version 2.0. The new standard and reference
-package are not claimed to be running in production or controlling live delivery.
+superseded where they conflict with version 2.0. [Chapter 13](docs/13-operational-case.md)
+reports accepted maintenance delivered to a private integration's development
+branch on 2026-10-09. Its ten heterogeneous historical native work executions
+still have zero completed autonomous lifecycles. Work-item reconciliation
+and original reserved-notice receipt remain unverified. Owned directory and
+Git-registration closure was verified later at 02:09:15 UTC through maintainer
+intervention with retained evidence; it is not an autonomous closure demonstration.
+Private validation is distinct from the public synthetic reference; no production
+or complete default-entrypoint demonstration is claimed.
+
+Read the [responsible-development article](docs/articles/apollo-2-responsible-development.md)
+for the security rationale, public US guidance mapping and evidence limits.
 
 ## Reproduce local conformance
 
@@ -77,6 +87,7 @@ A source verdict alone cannot establish a live lifecycle's completion.
 | [10 — State of the art (mid-2026)](docs/10-state-of-the-art-2026.md) | What a deep-research sweep validated, what we changed in response, and what we chose not to adopt |
 | [11 — Testing and code health](docs/11-testing-and-code-health.md) | Why coverage alone is a bad risk signal, the CRAP metric, the ratchet rules that keep a quality gate alive, why authorization tests pass for the wrong reason, the test pyramid as a decision rule, TDD as the default |
 | [12 — Apollo 2.0 standard](docs/12-apollo-2-standard.md) | Normative controls, acceptance evidence, failure actions and integration limits |
+| [13 — Operational case](docs/13-operational-case.md) | Reproducible public method, accepted private maintenance, interruption findings and explicitly pending lifecycle effects |
 
 ## Reference and historical examples
 
