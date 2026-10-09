@@ -37,12 +37,7 @@ python3 --version
 node --version
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s examples/fleet -p 'test_*.py' -v
 python3 examples/fleet/validate.py --help
-APOLLO_NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]')
-if [ "$APOLLO_NODE_MAJOR" -ge 22 ]; then
-  export NODE_OPTIONS='--max-old-space-size=4096 --no-experimental-webstorage'
-else
-  export NODE_OPTIONS='--max-old-space-size=4096'
-fi
+export NODE_OPTIONS='--max-old-space-size=4096'
 node --test examples/quality/ratchet-lib.test.mjs examples/loops/check-features-immutable.test.mjs
 ```
 
