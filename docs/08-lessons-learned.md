@@ -218,7 +218,64 @@ Query-cache keys are a global, untyped namespace, and nothing warns on reuse. Ea
 
 **Namespace cache keys by owning feature** (`['feature', 'entity', id]`), never by bare noun. **Guard the collision, not just the behavior**: the regression test seeds the cache with the *other* owner's key and value shape, then asserts the new hook still resolves independently and leaves the neighbor's entry untouched. The pre-fix version of that test fails; the behavioral assertions alone do not (a stale-cache refetch heals the shape before they run) — which is itself the lesson: the load-bearing assertion is the one that encodes the collision.
 
-## 10. The meta-lesson: methodology is scar tissue
+## 10. The full disk that taught the test suite to commit
+
+### What happened
+
+A lead agent was running about four executor agents and up to six reviewer agents in parallel. The reviewers were doing mutation testing: dozens of mutants, each run against a shell test suite of roughly 300 rows. The suite created one `mktemp -d` git repository per row and kept a cleanup list of those directories. The list was appended to inside `$(...)` — a subshell — so the parent shell's list stayed empty and the `EXIT` trap removed nothing.
+
+About 21,500 leaked directories later, the inodes of the tmpfs `/tmp` (1,048,576 of them) were exhausted while disk space was still fine. From that moment `mktemp -d` failed and returned an empty string, and the fixture carried on with `git -C "" init`, `git -C "" config` and `git -C "" commit`. An empty `-C` argument means "here", and "here" was the agent's working directory: the real checkout. The result was 591 empty commits on a pull-request branch, and the *shared* repository configuration gained a fake identity (`user.name Test`) plus `diff.external=/usr/bin/true` and a `textconv=/usr/bin/true` driver.
+
+Every `git diff` in every worktree then came back empty. The secret-scanning commit hook and the reviewers were silently blinded, and a commit was pushed under the fake identity. Every agent's shell began failing intermittently with `ENOSPC`; reviewers stopped without verdicts; one reviewer asked permission to `rm` the worktree, and the human denied it. The lead agent was only watching for report files, so the human noticed the stalled agents first.
+
+Nothing was lost. The pushed history was corrected with an identity-only amend and `--force-with-lease`, the local branch was reset, and the poisoned config sections were removed.
+
+### Why the naive setup allowed it
+
+- **Fixtures that fail open.** `$(mktemp -d)` was unchecked, and `git -C ""` quietly means "the current directory". A failed setup step became a destructive operation on the real repository.
+- **Subshell-scoped cleanup.** The registration looked right and ran green in a single-process test; it only leaked.
+- **Shared mutable state.** One repository config served every worktree, and one `/tmp` served every agent. A write from one place was visible everywhere.
+- **Hooks that trust `git diff`.** The security hook assumed the diff it read was the real diff. Nothing checked whether the config had been told to fake it.
+- **Parallelism multiplying a tiny leak.** A leak that is invisible in one run becomes tens of thousands of directories across dozens of mutants and six reviewers.
+- **Supervision by output files.** The lead asked "has a report appeared?", not "is each agent healthy?" A stalled agent and a slow agent look the same to that question.
+
+### The rules it became
+
+**Fixtures fail closed.** Create temp directories with `d=$(mktemp -d) || exit 1; [ -n "$d" ] || exit 1`, and register cleanup in the *parent* shell, not inside a command substitution. Never pass a possibly-empty variable to `git -C`.
+
+**Every parallel agent gets its own `TMPDIR`**, on disk rather than tmpfs, and removes it when it finishes. Check inode headroom (`df -i`) before fanning out, not just free space.
+
+**Security hooks do not trust the configuration they run under.** Call git with `--no-ext-diff --no-textconv`, and deny when the local config sets an external diff, a textconv driver or an identity that the task did not put there. (See [Hooks can be blinded by their own inputs](05-hooks-guardrails.md#hooks-can-be-blinded-by-their-own-inputs).)
+
+**The lead watches agent health, not just artifacts:** pending permission prompts, an agent going from working to idle without a report, temp-directory headroom, and drift in shared configuration. (See [Supervising parallel agents](03-agents.md#supervising-parallel-agents).)
+
+**Verdicts produced while the environment was compromised are re-run.** A reviewer that could not see the diff, or could not write a file, has not reviewed anything, whatever it reported.
+
+**Repairs to shared resources go to the human as exact commands.** The agent-side safety classifier rightly refuses to sweep shared directories, rewrite shared config or force-push — even to repair its own damage. That refusal is the system working. The agent's job is to hand over the precise commands and the evidence, not to find a way around the classifier.
+
+## 11. The escape that would not close
+
+### What happened
+
+A push-protection hook had an exception: a push to the main branch was allowed when the command provably ran in a *different*, standalone repository. The hook established that by tracking `cd` targets, `CDPATH` and repository identity from the command text.
+
+Three review rounds each found a new bypass:
+
+1. `CDPATH` set through `printf -v`, which the tracker did not recognise as an assignment.
+2. A relative `cd` that resolved through an inherited `CDPATH` to somewhere other than the hook assumed.
+3. A `cd` into a directory that exists but cannot be searched — root's home, for example. The `cd` fails, the shell stays in the protected checkout, and the push that follows runs there.
+
+### Why the naive setup allowed it
+
+The exception rested on a claim — "this command will run in that repository" — that has to be proven from the command's *text* before the command runs. Shell semantics (`CDPATH`, failed `cd`, permissions, expansion, state inherited from the environment) make that undecidable in practice. Each fix closed one path and left the design intact, so the next review found the next path.
+
+### The rule it became
+
+The human removed the exception. Every push to a protected branch is denied from everywhere, and the human performs those pushes directly.
+
+**When an allow-path inside a deny-wall needs a fourth fix for the same class of bypass, delete the allow-path.** Proving where a shell command will run from its text is not decidable enough to be a security boundary. A deny-wall with no exceptions is cheaper to verify, cheaper to explain, and costs the owner one command.
+
+## 12. The meta-lesson: methodology is scar tissue
 
 Look at the trajectory each story follows, because it is always the same trajectory:
 

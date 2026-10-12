@@ -177,6 +177,16 @@ Our rules:
 
 This rule came from experience, not theory: the one time we let two agents share a file "because the edits were in different functions", one of them reformatted the file and erased the other's work.
 
+## Supervising Parallel Agents
+
+Fan-out multiplies throughput, and it multiplies every small flaw in the environment by the same factor. The lead agent is the only participant that can see the whole fleet, so it supervises the fleet's *health*, not just its output files. A lead that waits for report files cannot tell a stalled agent from a slow one (see [The full disk that taught the test suite to commit](08-lessons-learned.md#10-the-full-disk-that-taught-the-test-suite-to-commit)).
+
+- **Watch health signals, not only artifacts.** Pending permission prompts, an agent that goes from working to idle without writing its report, shell errors such as `ENOSPC`, and drift in shared configuration are all visible before a report is due — and a prompt left waiting stalls an agent for as long as nobody looks.
+- **Isolate temporary state per agent.** Give each parallel agent its own `TMPDIR` on disk, have it remove the directory at the end, and check free inodes (`df -i`) as well as free space before fanning out.
+- **Treat shared mutable state as a hazard.** One repository config, one `/tmp` and one working checkout are shared by every agent. Test fixtures must fail closed so a failed setup step cannot run against the real checkout.
+- **Re-run verdicts produced while the environment was compromised.** A reviewer that could not see the diff or could not write a file has not reviewed anything, whatever it reported.
+- **Hand shared-resource repairs to the human as exact commands.** Sweeping shared directories, rewriting shared config and force-pushing are actions the agent-side safety classifier rightly refuses; the lead's job is to supply the commands and the evidence.
+
 ## Continue the Agent, Don't Respawn It
 
 The subtlest rule in the roster is in the executor's trigger description:
