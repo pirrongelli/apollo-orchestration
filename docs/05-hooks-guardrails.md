@@ -45,19 +45,13 @@ cmd=$(stdin | jq -r '.tool_input.command')
 # Only care about pushes targeting the protected branches
 echo "$cmd" | grep -qE 'git +push .* (main|prod)( |$)' || allow
 
-# Scope check: if the command cd's into some OTHER repo,
-# this guard does not apply — standalone repos may push freely
-if echo "$cmd" | grep -qE 'cd ' && ! echo "$cmd" | grep -q 'platform-app'; then
-  allow
-fi
-
 deny "Push to main/prod of the platform monorepo is blocked
       (customer sandbox / production). Per CLAUDE.md, push to dev
       IS the deploy. If genuinely intended, the user runs it
       manually via the ! prefix."
 ```
 
-Two details matter. First, the scope check: the same Claude Code session sometimes works on side repos (a relay service, a docs site) where `git push main` is perfectly fine. The guard applies only to the protected monorepo; a command that enters a different repo passes. Second, the escape hatch is named *in the denial message*: the human can always run the command themselves. The hook constrains the agent, not the owner.
+An earlier version of this guard let a push through when the command appeared to run in a different, standalone repository. It no longer does: three review rounds each found a new way to make a command *look* like it ran elsewhere while it ran in the protected checkout, and the exception was deleted rather than patched a fourth time (see [The escape that would not close](08-lessons-learned.md#11-the-escape-that-would-not-close)). The denial is unconditional; the escape hatch is named *in the denial message*: the human can always run the command themselves. The hook constrains the agent, not the owner.
 
 ## Guardrail 2: no local deploy scripts
 
@@ -154,11 +148,19 @@ Four principles emerged from running these in production.
 
 **2. Fail safe.** A hook that errors, times out, or hits an input it can't parse should block, not allow. Our SQL guard occasionally false-positives on odd meta-commands; we accept that. The asymmetry is total: a spurious block costs the model one rephrase, while a spurious allow could drop a production table. When in doubt, deny — the human escape hatch (below) bounds the cost.
 
-**3. Scope precisely.** Guardrails that overreach get worked around, resented, or disabled — by humans. The push guard applies only to the protected monorepo and explicitly lets commands targeting other repos pass. The SQL guard blocks mass mutation, not reads or scoped writes. The WHERE check is per-statement, not per-command. Precision is what lets a guard stay on forever.
+**3. Scope precisely — by what the guard can decide.** Guardrails that overreach get worked around, resented, or disabled — by humans. The SQL guard blocks mass mutation, not reads or scoped writes. The WHERE check is per-statement, not per-command. Precision is what lets a guard stay on forever. Precision has a limit, though: do not scope a guard by a property of a shell command that cannot be decided from its text (where it will run, what a variable will expand to). Deny, and leave the human the escape hatch.
 
 **4. Always leave the human an escape hatch.** Every hook constrains the *agent's* tool calls; none constrains the owner's terminal. The denial messages say so explicitly ("if genuinely intended, the user runs it manually"). This matters for legitimacy: the guardrail encodes "this action requires a human decision," not "this action is forbidden." Emergencies remain possible — they just can't be initiated autonomously.
 
 One more operational note: hooks are configuration, so they deserve the same review discipline as code. A regex with a gap is a guardrail with a hole, and you won't find the hole until the day it matters. We adversarially test new hooks with the bypass attempts we can think of (the multi-statement SQL trick above was found exactly this way) before trusting them.
+
+## Hooks can be blinded by their own inputs
+
+A hook is only as trustworthy as the data it reads. Two ways a hook goes blind without ever erroring:
+
+**External diff and textconv.** A secret-scanning or content-checking hook that reads `git diff` is reading the output of whatever `diff.external` and `textconv` drivers the repository configuration names. If that configuration is changed — by a buggy test fixture, a stray `git config` run against the wrong directory, any write to shared config — the diff can be empty while the change is real, and every reader of it (the hook and every reviewer) sees nothing. Call git with `--no-ext-diff --no-textconv`, and deny when the local config sets an external diff, a textconv driver or an unexpected identity. In one incident a test suite did exactly this to a shared repository config; see [The full disk that taught the test suite to commit](08-lessons-learned.md#10-the-full-disk-that-taught-the-test-suite-to-commit).
+
+**Timeouts fail open.** A PreToolUse hook that times out does not block the tool call; the call proceeds as if the hook had allowed it. A hook that does expensive work on large inputs (a big diff, a long command) therefore turns "slow" into "unguarded". Bound the hook's runtime well below its timeout, and deny — with a message saying the input was too large to inspect — instead of scanning without limit.
 
 ## Layering: the hierarchy of trust
 
